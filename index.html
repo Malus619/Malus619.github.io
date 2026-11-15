@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Rangan Mukhopadhyay — artist / observer. Graphic and user experience design, film and photography.">
+<meta property="og:title" content="Portfolio 1.5 — Rangan Mukhopadhyay">
+<meta property="og:description" content="Artist / observer. Graphic and user experience design, film and photography.">
+<meta property="og:image" content="assets/poster.webp">
+<meta name="theme-color" content="#050e11">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/heming.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/dirtyline.woff2" as="font" type="font/woff2" crossorigin>
+<style>[hidden]{display:none!important} img{max-width:100%}</style>
+<title>Portfolio 1.5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Noto+Sans+Devanagari:wght@600;700&display=swap">
+<style>
+/* Layout: the landing is one full-bleed 16:9 scene (video → title → mist → interior cut-out) laid out in the
+   1920×1080 units of the reference (1cqw = 19.2 reference px). About, Work and Museum are carriages that slide
+   in over it, each a scrolling column under the fixed nav band.
+   Single dark look by choice: the scene is a night carriage, so it does not switch with the viewer's theme. */
+@font-face { font-family: "Heming"; src: url("assets/heming.woff2") format("woff2"); font-weight: 300 700; font-display: block; }
+@font-face { font-family: "Dirtyline"; src: url("assets/dirtyline.woff2") format("woff2"); font-display: block; }
+
+:root {
+  --carriage: #050e11;      /* nav band, wall shadow, page ground */
+  --carriage-2: #0b171b;    /* raised surfaces on the pages */
+  --carriage-glass: rgba(5, 14, 17, 0.92);
+  --signal: #288c4d;        /* nav green, sampled from the reference */
+  --signal-lit: #4fd081;    /* nav green on hover / focus / current */
+  --ink: #094ae6;           /* title blue, sampled from the reference */
+  --sky: #f3c1ea;           /* video sky; the pink of the glass */
+  --text: #ece2ea;          /* running text on the carriage */
+  --muted: rgba(236, 226, 234, 0.62);
+  --rule: rgba(243, 193, 234, 0.16);
+  --mist: 238, 222, 236;    /* condensation tint (rgb triplet for canvas) */
+  --display: "Heming", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --title: "Dirtyline", "Arial Black", sans-serif;
+  --nav-h: clamp(52px, 3.65vw, 76px);
+  --ease-carriage: cubic-bezier(.65, 0, .25, 1);
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--carriage);
+  color: var(--signal);
+  font-family: var(--display);
+  overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- scene ---------- */
+.scene { position: fixed; inset: 0; overflow: hidden; background: var(--carriage); touch-action: none; }
+.stage {
+  position: absolute; left: 50%; top: 50%;
+  width: max(100vw, calc(100dvh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  translate: -50% -50%;
+  container-type: inline-size;
+}
+/* The carriage moves: a slow sway (transform), a fine wheel rumble with a clack-clack over each rail joint
+   (translate), and a 1.2% overscan so the shake never shows the edge of the frame. All compositor-only. */
+.sway { position: absolute; inset: 0; scale: 1.012; animation: sway 7s ease-in-out infinite, rumble 3.6s linear infinite; }
+body[data-page] .sway { animation-play-state: paused; }
+@keyframes rumble {
+  0.00% { translate: 0.00px 0.00px; }
+  2.08% { translate: 0.22px 0.27px; }
+  4.17% { translate: -0.37px 0.94px; }
+  6.25% { translate: -0.08px -0.14px; }
+  8.33% { translate: 0.38px 0.26px; }
+  10.42% { translate: 0.08px -0.50px; }
+  12.50% { translate: -0.41px 0.22px; }
+  14.58% { translate: -0.04px 0.85px; }
+  16.67% { translate: 0.41px -0.47px; }
+  18.75% { translate: -0.05px 0.37px; }
+  20.83% { translate: -0.35px -0.08px; }
+  22.92% { translate: 0.23px -0.19px; }
+  25.00% { translate: 0.34px 0.35px; }
+  27.08% { translate: -0.24px -0.23px; }
+  29.17% { translate: -0.20px -0.20px; }
+  31.25% { translate: 0.31px 0.31px; }
+  33.33% { translate: 0.21px -0.30px; }
+  35.42% { translate: -0.33px 0.01px; }
+  37.50% { translate: 0.05px 0.34px; }
+  39.58% { translate: 0.43px -0.36px; }
+  41.67% { translate: -0.06px 0.20px; }
+  43.75% { translate: -0.31px 0.15px; }
+  45.83% { translate: 0.08px -0.48px; }
+  47.92% { translate: 0.36px 0.24px; }
+  50.00% { translate: -0.32px 0.03px; }
+  52.08% { translate: -0.28px -0.35px; }
+  54.17% { translate: 0.28px 0.40px; }
+  56.25% { translate: 0.26px -0.25px; }
+  58.33% { translate: -0.35px -0.30px; }
+  60.42% { translate: -0.05px 0.39px; }
+  62.50% { translate: 0.32px -0.26px; }
+  64.58% { translate: -0.05px -0.04px; }
+  66.67% { translate: -0.26px 0.29px; }
+  68.75% { translate: 0.02px -0.48px; }
+  70.83% { translate: 0.37px 0.15px; }
+  72.92% { translate: -0.24px 0.23px; }
+  75.00% { translate: -0.33px -0.46px; }
+  77.08% { translate: 0.17px 0.32px; }
+  79.17% { translate: 0.28px 0.23px; }
+  81.25% { translate: -0.26px -0.30px; }
+  83.33% { translate: -0.22px 0.34px; }
+  85.42% { translate: 0.44px 0.01px; }
+  87.50% { translate: 0.01px -0.21px; }
+  89.58% { translate: -0.33px 0.53px; }
+  91.67% { translate: 0.02px -0.30px; }
+  93.75% { translate: 0.32px -0.26px; }
+  95.83% { translate: -0.17px 0.55px; }
+  97.92% { translate: -0.33px -0.48px; }
+  100.00% { translate: 0.00px 0.00px; }
+}
+@keyframes sway {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  30% { transform: translate3d(0.04cqw, 0.09cqw, 0) rotate(0.03deg); }
+  55% { transform: translate3d(-0.03cqw, -0.03cqw, 0) rotate(-0.02deg); }
+  80% { transform: translate3d(0.02cqw, 0.06cqw, 0) rotate(0.01deg); }
+}
+
+/* the pane: everything seen through the glass. Sits at 261,104 of the reference, 1244×713 */
+.outside {
+  position: absolute;
+  left: 13.6%; top: 9.6%; width: 64.8%; height: 66%;
+  overflow: hidden;
+  background: var(--sky);
+}
+.outside-inner {
+  position: absolute; inset: -3%;
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
+  transition: transform 1.2s cubic-bezier(.2,.7,.2,1);
+}
+.outside video, .outside .poster {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+/* ---------- title, set from the reference ----------
+   Dirtyline: ascent .75em, cap height .70em → line box top = baseline − .75em
+   Heming:    ascent .73em + half-leading .04em, figure height .68em → top = baseline − .77em */
+.title { position: absolute; inset: 0; margin: 0; color: var(--ink); pointer-events: none; user-select: none; font-weight: 400; }
+.t-line { position: absolute; display: block; line-height: 1; white-space: nowrap; }
+.t-kicker {                     /* "artist/observer": caps 370–400, x 633–947 */
+  font-family: var(--title);
+  font-size: 2.24cqw;
+  letter-spacing: -0.026em;
+  left: 19.37cqw; top: 13.75cqw;
+}
+.t-main {                       /* "porTFolio": caps 419–504, x 630–1221; TF falls to the blackletter set */
+  font-family: var(--title);
+  font-size: 6.32cqw;
+  letter-spacing: -0.008em;
+  left: 19.05cqw; top: 16.11cqw;
+}
+.t-ver {                        /* "1.5": Heming SemiBold, figures 510–544, right edge 1209 */
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 2.6cqw;
+  letter-spacing: 0.01em;
+  right: 15.38cqw; top: 20.93cqw;
+}
+.bm { display: inline-block; width: 0; height: 0; }   /* baseline marker, used to redraw the title inside the mist */
+
+/* passing pole: a soft shadow that sweeps across the glass now and then */
+.pole {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent 0 44%, rgba(5,14,17,.42) 48% 52%, transparent 56% 100%);
+  translate: -110% 0;
+}
+.pole.pass { animation: pole 0.55s linear; }
+@keyframes pole { from { translate: -60% 0; } to { translate: 60% 0; } }
+
+/* mist: a low-resolution, blurred copy of the view, painted over the glass and wiped by the cursor */
+.mist {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  filter: blur(6px) saturate(0.8);
+  transform: scale(1.04);         /* hide the blur's soft edge under the frame */
+}
+
+.interior {
+  position: absolute; left: 0; top: 2.5%; width: 100%; height: auto; max-width: 100%;
+  display: block; pointer-events: none; user-select: none;
+}
+/* the passenger turns to face you while the cursor rests on his face */
+
+/* ---------- nav ---------- */
+.nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 6;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--carriage-glass);
+  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 10px 30px rgba(0,0,0,.35);
+}
+.nav ul {
+  list-style: none; margin: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  height: var(--nav-h);
+  padding-block: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px), 9.7vw);
+  padding-right: max(16px, env(safe-area-inset-right, 0px), 9.7vw);
+}
+.nav a {
+  display: inline-block;
+  color: var(--signal);
+  text-decoration: none;
+  font-weight: 300;
+  font-size: clamp(16px, 1.78vw, 36px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  padding: 0.3em 0.15em;
+  transition: color .25s ease, text-shadow .25s ease;
+  translate: 0 0.22em;
+}
+.nav a:hover, .nav a:focus-visible { color: var(--signal-lit); text-shadow: 0 0 18px rgba(79,208,129,.35); }
+.nav a[aria-current="page"] { color: var(--signal-lit); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.3em; }
+.nav a:focus-visible { outline: 1px solid var(--signal-lit); outline-offset: 4px; }
+
+.hint {
+  position: fixed; z-index: 4; margin: 0;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  color: rgba(236,226,238,.5);
+  font-weight: 300; font-size: 13px; letter-spacing: .01em;
+  transition: opacity 1s ease;
+}
+.hint.gone, body[data-page] .hint { opacity: 0; }
+
+/* ---------- portrait screens: the standing passenger by the carriage door ----------
+   A 941×1672 scene covers the screen. Any side crop falls a quarter on the left, three quarters on the right,
+   so the passenger stays in frame. The door's glass sits at 333,422 of the artwork, 345×577.
+   The title is refitted onto the glass in script. */
+@media (max-aspect-ratio: 1 / 1) {
+  .stage {
+    width: max(100vw, calc(100vh * 941 / 1672)); width: max(100vw, calc(100dvh * 941 / 1672));
+    aspect-ratio: 941 / 1672;
+    left: 25%; translate: -25% -50%;
+  }
+  .outside { left: 35.388%; top: 25.239%; width: 36.663%; height: 34.51%; }
+  .interior { top: 0; }
+  .t-ver { right: auto; left: 49.42cqw; translate: -100% 0; }   /* keep "1.5" under the end of the word on a narrow pane */
+}
+
+/* ======================================================================
+   Carriages: About, Work, Museum
+   ====================================================================== */
+.page {
+  position: fixed; inset: 0; z-index: 5;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  background: var(--carriage);
+  color: var(--text);
+  visibility: hidden;
+  transform: translate3d(100%, 0, 0);
+  transition: transform .8s var(--ease-carriage), visibility 0s linear .8s;
+  -webkit-overflow-scrolling: touch;
+}
+.page.open { visibility: visible; transform: none; transition: transform .8s var(--ease-carriage), visibility 0s linear 0s; }
+.page.past { transform: translate3d(-100%, 0, 0); }
+.page-inner {
+  max-width: 1200px; margin-inline: auto;
+  padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + clamp(36px, 6vw, 88px));
+  padding-bottom: calc(clamp(72px, 10vw, 140px) + env(safe-area-inset-bottom, 0px));
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  display: grid; gap: clamp(48px, 7vw, 104px);
+}
+
+.page-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px;
+  padding-bottom: clamp(20px, 3vw, 32px);
+  border-bottom: 1px solid var(--rule);
+}
+.page-head h2 {
+  margin: 0;
+  font-family: var(--title); font-weight: 400;
+  font-size: clamp(64px, 12vw, 176px); line-height: .82; letter-spacing: -0.02em;
+  color: var(--sky);
+}
+.page-head p { margin: 0; max-width: 38ch; color: var(--muted); font-size: clamp(15px, 1.3vw, 18px); line-height: 1.5; font-weight: 300; }
+.head-side { display: grid; gap: 14px; justify-items: end; }
+.page h2:focus { outline: none; }
+.float-back {
+  position: fixed; z-index: 7;
+  top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 16px);
+  left: max(16px, env(safe-area-inset-left, 0px));
+  width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--sky); color: var(--ink);
+  box-shadow: 0 6px 20px rgba(0,0,0,.45);
+  opacity: 0; visibility: hidden; transform: translateX(-14px);
+  transition: opacity .35s ease, transform .45s var(--ease-carriage), visibility 0s linear .45s;
+}
+body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; transition: opacity .35s ease .35s, transform .45s var(--ease-carriage) .35s, visibility 0s; }
+.float-back:hover { transform: scale(1.06); }
+.float-back:focus-visible { outline: 2px solid var(--sky); outline-offset: 4px; }
+.float-back svg { width: 22px; height: 22px; }
+@media (max-width: 1340px) {
+  .page-inner { padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + clamp(36px, 6vw, 88px) + 52px); }
+}
+.page-head p a { color: var(--text); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .25em; }
+.page-head p a:hover, .page-head p a:focus-visible { color: var(--sky); }
+.back {
+  color: var(--signal); text-decoration: none; font-size: 15px; font-weight: 400;
+  padding: 6px 0; transition: color .2s ease;
+}
+.back:hover, .back:focus-visible { color: var(--signal-lit); }
+.back:focus-visible { outline: 1px solid var(--signal-lit); outline-offset: 4px; }
+
+.sec-title { margin: 0 0 20px; font-size: 15px; font-weight: 500; letter-spacing: .01em; color: var(--signal-lit); }
+
+/* ---------- About ---------- */
+/* A card ticket after Indian Railways' "Happy Journey" tickets: maroon band, punched edges, dot-matrix print.
+   Everything inside scales with the ticket's own width (cqw). */
+.pass { display: grid; grid-template-columns: auto minmax(0, 760px); align-items: center; justify-content: start; }
+.photo {
+  margin: 0 -44px 0 0; position: relative; z-index: 2;
+  width: clamp(170px, 19vw, 250px);
+  background: #fbfaf7; padding: 10px 10px 36px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.45);
+  rotate: -4deg;
+}
+.photo img { display: block; width: 100%; height: auto; }
+.photo figcaption { position: absolute; left: 12px; right: 12px; bottom: 9px; font: 700 13px/1 "Courier Prime", "Courier New", monospace; color: #6c2222; letter-spacing: .04em; }
+.ticket {
+  --maroon: #9a2f2c;
+  --paper: #ebe8e2;
+  --print: #2f2b29;
+  container-type: inline-size;
+  position: relative; width: 100%;
+  display: grid; grid-template-columns: 7cqw minmax(0, 1fr) 5.5cqw;
+  padding-block: 3.2cqw;
+  color: var(--print);
+  background-color: var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='40'%3E%3Ctext x='0' y='16' font-family='Arial' font-size='9' fill='%239a2f2c' fill-opacity='.10'%3EARTIST OBSERVER PORTFOLIO RAILWAY %3C/text%3E%3Ctext x='-60' y='34' font-family='Arial' font-size='9' fill='%239a2f2c' fill-opacity='.10'%3EARTIST OBSERVER PORTFOLIO RAILWAY %3C/text%3E%3C/svg%3E"),
+    linear-gradient(170deg, rgba(255,255,255,.35), rgba(0,0,0,.03));
+  box-shadow: 0 2px 4px rgba(0,0,0,.3), 0 20px 50px rgba(0,0,0,.4);
+  -webkit-mask:
+    radial-gradient(circle 9px at 24px 50%, #0000 96%, #000) left / 50% 46px repeat-y,
+    radial-gradient(circle 9px at calc(100% - 24px) 50%, #0000 96%, #000) right / 50% 46px repeat-y;
+          mask:
+    radial-gradient(circle 9px at 24px 50%, #0000 96%, #000) left / 50% 46px repeat-y,
+    radial-gradient(circle 9px at calc(100% - 24px) 50%, #0000 96%, #000) right / 50% 46px repeat-y;
+}
+.ticket .side {
+  writing-mode: vertical-rl; rotate: 180deg; justify-self: center; align-self: center;
+  font: 700 max(9px, 1.7cqw)/1 var(--display); letter-spacing: .12em; color: var(--maroon);
+}
+.ticket .side-r { font: 400 max(8px, 1.4cqw)/1 "Courier Prime", monospace; letter-spacing: .04em; opacity: .7; }
+.t-body { border: max(1.5px, .3cqw) solid var(--maroon); border-top: 0; min-width: 0; }
+.t-band {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  background: var(--maroon); color: #fff; height: 9cqw; padding-inline: 3cqw;
+}
+.t-band .hi { font: 700 max(13px, 3.4cqw)/1 "Noto Sans Devanagari", sans-serif; justify-self: center; }
+.t-band .en { font: 700 max(11px, 2.9cqw)/1 var(--display); letter-spacing: .02em; justify-self: center; }
+.t-band .seal {
+  width: 11cqw; height: 11cqw; border-radius: 50%; margin-block: -1cqw;
+  background: var(--paper); border: .5cqw double var(--maroon); box-shadow: 0 0 0 .5cqw var(--maroon);
+  display: grid; place-items: center; color: var(--maroon);
+  font: 400 5.4cqw/1 var(--title);
+}
+.t-print { padding: 2.6cqw 3.4cqw 2.8cqw; display: grid; gap: .55cqw; font: 700 max(11px, 2.75cqw)/1.25 "Courier Prime", "Courier New", monospace; letter-spacing: .02em; }
+.t-print p { margin: 0; }
+.t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 3cqw; margin-bottom: .8cqw; }
+.t-top .jrny { padding-top: 2.2cqw; font-size: max(12px, 3.1cqw); }
+.t-no { border: max(1.5px, .3cqw) solid var(--maroon); border-right: 0; border-bottom: 0; padding: 1cqw 0 0 2.4cqw; margin-right: -3.4cqw; min-width: 36%; }
+.t-no small { display: block; font: 600 max(9px, 1.9cqw)/1.2 "Noto Sans Devanagari", var(--display); color: var(--maroon); }
+.t-no small span { font-family: var(--display); font-weight: 700; }
+.t-no strong { display: block; font: 400 max(20px, 6.2cqw)/1.05 "Courier Prime", monospace; letter-spacing: .14em; color: #3c3533; }
+.t-print .hi-name { font: 600 max(14px, 3.5cqw)/1.25 "Noto Sans Devanagari", sans-serif; }
+.t-print .name { font-size: max(13px, 3.4cqw); }
+.t-print .row { display: flex; align-items: baseline; gap: 2cqw; flex-wrap: wrap; }
+.t-print .row .push { margin-left: auto; }
+.t-print .pen { flex: 1 1 8cqw; min-width: 6cqw; height: 0; border-top: max(1.5px, .35cqw) solid #2e4fd1; rotate: -2deg; translate: 0 -.6cqw; border-radius: 50%; }
+.t-print .foot { margin-top: .6cqw; opacity: .85; }
+
+@media (max-width: 760px) {
+  .pass { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 0; }
+  .photo { margin: 0 0 -12px 4vw; width: min(48vw, 200px); justify-self: start; }
+  .ticket {
+    -webkit-mask:
+      radial-gradient(circle 6px at 14px 50%, #0000 96%, #000) left / 50% 30px repeat-y,
+      radial-gradient(circle 6px at calc(100% - 14px) 50%, #0000 96%, #000) right / 50% 30px repeat-y;
+            mask:
+      radial-gradient(circle 6px at 14px 50%, #0000 96%, #000) left / 50% 30px repeat-y,
+      radial-gradient(circle 6px at calc(100% - 14px) 50%, #0000 96%, #000) right / 50% 30px repeat-y;
+    grid-template-columns: 9cqw minmax(0, 1fr) 7cqw;
+  }
+}
+
+.lede {
+  margin: 0; max-width: 40ch;
+  font-size: clamp(21px, 2.3vw, 32px); line-height: 1.32; font-weight: 300; letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+.cols { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: clamp(40px, 5vw, 64px) clamp(24px, 3vw, 48px); }
+.col-7 { grid-column: span 7; min-width: 0; }
+.col-5 { grid-column: span 5; min-width: 0; }
+.col-4 { grid-column: span 4; min-width: 0; }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
+.timeline li {
+  display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 4px 20px;
+  padding: 18px 0; border-top: 1px solid var(--rule);
+}
+.timeline li:last-child { border-bottom: 1px solid var(--rule); }
+.timeline time { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; padding-top: 4px; }
+.timeline h4 { margin: 0 0 6px; font-size: clamp(18px, 1.6vw, 21px); font-weight: 500; line-height: 1.25; color: var(--text); }
+.timeline h4 span { color: var(--muted); font-weight: 300; }
+.timeline p { margin: 0; color: var(--muted); font-size: 15.5px; line-height: 1.55; font-weight: 300; max-width: 60ch; }
+
+.plain { list-style: none; margin: 0; padding: 0; display: grid; }
+.plain li { padding: 11px 0; border-top: 1px solid var(--rule); font-size: 17px; font-weight: 400; }
+.plain li:last-child { border-bottom: 1px solid var(--rule); }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(20px, 3vw, 40px); }
+
+.notes { display: grid; gap: 22px; }
+.notes div { display: grid; gap: 4px; }
+.notes h4 { margin: 0; font-size: 17px; font-weight: 500; color: var(--text); }
+.notes p { margin: 0; color: var(--muted); font-size: 15.5px; line-height: 1.55; font-weight: 300; }
+
+.contact {
+  display: grid; gap: 22px;
+  padding-top: clamp(28px, 4vw, 44px); border-top: 1px solid var(--rule);
+}
+.contact .mail-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.contact .mail {
+  font-size: clamp(22px, 3.6vw, 48px); font-weight: 400; letter-spacing: -0.02em; color: var(--sky);
+  overflow-wrap: anywhere; user-select: all;
+}
+.btn {
+  appearance: none; border: 1px solid var(--signal); background: transparent; color: var(--signal-lit);
+  font: 500 14px/1 var(--display); padding: 11px 16px; border-radius: 999px; cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.btn:hover { background: rgba(79, 208, 129, .12); }
+.btn:focus-visible { outline: 2px solid var(--signal-lit); outline-offset: 3px; }
+.links { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.links a { color: var(--text); font-size: 17px; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: .3em; }
+.links a:hover, .links a:focus-visible { text-decoration-color: var(--sky); color: var(--sky); }
+.links span { color: var(--muted); font-size: 17px; }
+
+/* ---------- Work: an index of projects, each opening its Behance case study ---------- */
+.work-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.work-row {
+  display: grid; align-items: baseline;
+  grid-template-columns: minmax(0, 1fr) 13rem 9rem;
+  gap: 8px 24px;
+  padding: clamp(18px, 2.4vw, 28px) 12px;
+  margin-inline: -12px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--text); text-decoration: none;
+  border-radius: 6px;
+  transition: background .25s ease;
+}
+.work-row:hover, .work-row:focus-visible { background: rgba(243, 193, 234, .06); }
+.work-row:focus-visible { outline: 1px solid var(--sky); outline-offset: -1px; }
+.work-row h3 {
+  margin: 0; font-family: var(--title); font-weight: 400;
+  font-size: clamp(26px, 3vw, 42px); line-height: 1; letter-spacing: -0.015em;
+  text-transform: lowercase;      /* Dirtyline sets lowercase as clean capitals; uppercase input switches to its blackletter */
+  color: var(--text); transition: color .25s ease;
+}
+.work-row:hover h3, .work-row:focus-visible h3 { color: var(--sky); }
+.work-row h3 .num { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; }   /* Dirtyline only has blackletter figures */
+.work-row .desc { margin: 8px 0 0; color: var(--muted); font-size: 15.5px; line-height: 1.5; font-weight: 300; max-width: 52ch; }
+.work-row .meta { color: var(--muted); font-size: 15px; }
+.work-row .year { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.work-row .go { color: var(--signal); font-size: 15px; justify-self: end; transition: color .2s ease; white-space: nowrap; }
+.work-row:hover .go, .work-row:focus-visible .go { color: var(--signal-lit); }
+.work-legend {
+  display: grid; grid-template-columns: minmax(0, 1fr) 13rem 9rem; gap: 24px;
+  padding: 0 0 12px; color: var(--muted); font-size: 13px;
+}
+.cover-peek {
+  position: fixed; z-index: 7; left: 0; top: 0; width: clamp(200px, 22vw, 320px); aspect-ratio: 4 / 3;
+  border-radius: 6px; overflow: hidden; pointer-events: none;
+  opacity: 0; transform: translate3d(-9999px, 0, 0) rotate(-2deg) scale(.96);
+  transition: opacity .2s ease;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+.cover-peek.on { opacity: 1; }
+.cover-peek img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Museum: a loose pile you can rearrange ---------- */
+.museum-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; color: var(--muted); font-size: 14.5px; }
+.cluster { position: relative; width: 100%; min-height: 60vh; touch-action: pan-y; }
+.piece {
+  position: absolute; left: 0; top: 0;
+  padding: clamp(5px, .6vw, 8px);
+  background: #f4ecf2;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.35);
+  cursor: grab; user-select: none; -webkit-user-select: none;
+  transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
+  transition: transform .6s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease;
+  outline: none;
+}
+.piece.dragging { cursor: grabbing; transition: box-shadow .25s ease; box-shadow: 0 2px 4px rgba(0,0,0,.4), 0 28px 60px rgba(0,0,0,.55); }
+.piece:hover { box-shadow: 0 2px 4px rgba(0,0,0,.4), 0 18px 40px rgba(0,0,0,.45); }
+.piece:focus-visible { box-shadow: 0 0 0 2px var(--carriage), 0 0 0 4px var(--sky); }
+.piece img, .piece video { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.piece.empty {
+  background: transparent; box-shadow: none;
+  border: 1px dashed rgba(243, 193, 234, .32);
+  display: grid; place-items: center; text-align: center;
+}
+.piece.empty span { color: rgba(243, 193, 234, .5); font-size: 12px; padding: 8px; }
+.piece.empty:hover, .piece.empty:focus-visible { border-color: var(--sky); }
+
+dialog.viewer {
+  border: 0; padding: 0; background: transparent; color: var(--text);
+  max-width: min(92vw, 1100px); width: 100%;
+}
+dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
+.viewer figure { margin: 0; display: grid; gap: 14px; }
+.viewer .frame { background: #f4ecf2; padding: 10px; border-radius: 2px; justify-self: center; max-width: 100%; }
+.viewer img, .viewer video { display: block; max-width: 100%; max-height: 74vh; height: auto; }
+.viewer .blank {
+  width: min(70vw, 520px); aspect-ratio: 4 / 3; display: grid; place-items: center; text-align: center; padding: 24px;
+  border: 1px dashed rgba(243, 193, 234, .4); color: var(--muted); font-size: 16px; line-height: 1.5;
+}
+.viewer figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; align-items: baseline; }
+.viewer figcaption strong { font-weight: 500; font-size: 18px; }
+.viewer figcaption span { color: var(--muted); font-size: 15px; }
+.viewer .close { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- narrow screens ---------- */
+@media (max-width: 860px) {
+  .col-7, .col-5, .col-4 { grid-column: 1 / -1; }
+  .work-legend { display: none; }
+  .work-row { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; }
+  .work-row > div:first-child { grid-column: 1 / -1; }
+  .work-row .meta { grid-column: 1; }
+  .work-row .go { grid-column: 2; }
+  .head-side { justify-items: start; }
+}
+@media (max-width: 620px) {
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .pair { grid-template-columns: minmax(0, 1fr); }
+  .timeline li { grid-template-columns: minmax(0, 1fr); }
+  .timeline time { padding-top: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sway, .pole.pass { animation: none; }
+  .outside-inner { transition: none; transform: none; }
+  .page, .page.open { transition: visibility 0s; transform: none; }
+  .page:not(.open) { visibility: hidden; }
+  .piece { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="scene" id="scene">
+  <div class="stage" id="stage">
+    <div class="sway">
+      <div class="outside" id="outside">
+        <div class="outside-inner" id="outsideInner">
+          <img class="poster" src="assets/poster.webp" alt="">
+          <video id="vid" src="assets/window.mp4" poster="assets/poster.webp" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+        </div>
+        <h1 class="title" id="title" aria-label="Artist/Observer, Portfolio 1.5">
+          <span class="t-line t-kicker" data-font="title">artist/observer<i class="bm"></i></span>
+          <span class="t-line t-main" data-font="title">porTFolio<i class="bm"></i></span>
+          <span class="t-line t-ver" data-font="display">1.5<i class="bm"></i></span>
+        </h1>
+        <div class="pole" id="pole"></div>
+        <canvas class="mist" id="mist" aria-hidden="true"></canvas>
+      </div>
+      <picture>
+        <source media="(max-aspect-ratio: 1/1)" srcset="assets/interior-mobile.webp">
+        <img class="interior" src="assets/interior.webp" alt="A passenger in a dark train carriage looks out of the window">
+      </picture>
+    </div>
+  </div>
+</div>
+
+<nav class="nav" aria-label="Main">
+  <ul>
+    <li><a href="#about" data-label="ABOUT ME">ABOUT ME</a></li>
+    <li><a href="#work" data-label="WORK">WORK</a></li>
+    <li><a href="#museum" data-label="MUSEUM">MUSEUM</a></li>
+  </ul>
+</nav>
+
+<a class="float-back" href="#" aria-label="Back to the window">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
+</a>
+
+<p class="hint" id="hint">Move across the glass to clear the mist</p>
+
+<!-- ============================== ABOUT ============================== -->
+<section class="page" id="about" aria-labelledby="about-h" hidden>
+  <div class="page-inner">
+    <header class="page-head">
+      <h2 id="about-h">About</h2>
+    </header>
+
+    <div class="pass">
+      <figure class="photo">
+        <img src="assets/pfp.webp" alt="Rangan Mukhopadhyay" width="560" height="720">
+        <figcaption>PASSENGER</figcaption>
+      </figure>
+      <article class="ticket" aria-label="Railway ticket: Rangan Mukhopadhyay, from MIT Institute of Design, via Graphic and User Experience Design, window seat">
+        <div class="side" aria-hidden="true">PORTFOLIO RAILWAY</div>
+        <div class="t-body" aria-hidden="true">
+          <div class="t-band">
+            <span class="hi" lang="hi">शुभ यात्रा</span>
+            <span class="seal">TF</span>
+            <span class="en">HAPPY JOURNEY</span>
+          </div>
+          <div class="t-print">
+            <div class="t-top">
+              <p class="jrny">OBSERVER JOURNEY</p>
+              <p class="t-no"><small lang="hi">टिकट नं. <span>TICKET NO</span></small><strong>0001.5</strong></p>
+            </div>
+            <p class="hi-name" lang="hi">रंगन मुखोपाध्याय</p>
+            <p class="name">RANGAN MUKHOPADHYAY</p>
+            <p>FROM MIT INSTITUTE OF DESIGN</p>
+            <p>VIA GRAPHIC &amp; USER EXPERIENCE DESIGN</p>
+            <p class="row"><span>Jrny Dt 12/11/2026</span><span class="pen"></span><span>∞ KM</span></p>
+            <p class="row"><span>Adult : 1&nbsp; Child : 0</span><span class="push">Seat : WINDOW</span></p>
+            <p>Artist / Observer Only</p>
+            <p class="row foot"><span>12/11/2026 23:51</span><span>MITID</span><span class="push">W1</span></p>
+          </div>
+        </div>
+        <div class="side side-r" aria-hidden="true">Printed for Portfolio 1.5</div>
+      </article>
+    </div>
+
+    <p class="lede">Design student and visual storyteller specialising in graphic and user experience design. A full-time observer and artist, drawn to the overlooked details of everyday life. I approach design through experimentation, exploration and play, and turn what I notice into visual narratives, intuitive digital experiences and design that means something.</p>
+
+    <div class="cols">
+      <section class="col-7" aria-labelledby="exp-h">
+        <h3 class="sec-title" id="exp-h">Experience</h3>
+        <ol class="timeline">
+          <li>
+            <time datetime="2026-05">May–Jul 2026</time>
+            <div>
+              <h4>Graphic Design Intern <span>at Vox India</span></h4>
+              <p>Contributed to the launch of Poddar Pipes: developed brand collaterals and made key design decisions to keep the identity cohesive and consistent.</p>
+            </div>
+          </li>
+          <li>
+            <time datetime="2025-08">Aug–Sep 2025</time>
+            <div>
+              <h4>Volunteer Intern <span>at Teach For India</span></h4>
+              <p>Helped run primary research with 7–8 year old girls, exploring self-esteem, peer relationships and gender roles.</p>
+            </div>
+          </li>
+          <li>
+            <time datetime="2025-02">Feb–Mar 2025</time>
+            <div>
+              <h4>Graphic Designer <span>for FICCI</span></h4>
+              <p>Designed and published social media posts on Instagram and X for India Steel Expo 2025.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="col-5" aria-labelledby="skills-h">
+        <h3 class="sec-title" id="skills-h">Skills and tools</h3>
+        <div class="pair">
+          <ul class="plain" aria-label="Skills">
+            <li>Visual storytelling</li>
+            <li>Typography &amp; layout</li>
+            <li>User research &amp; UI</li>
+            <li>Branding</li>
+            <li>Illustration</li>
+            <li>Video editing</li>
+          </ul>
+          <ul class="plain" aria-label="Tools">
+            <li>After Effects</li>
+            <li>Photoshop</li>
+            <li>Illustrator</li>
+            <li>InDesign</li>
+            <li>Figma</li>
+            <li>Premiere Pro</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="col-7" aria-labelledby="off-h">
+        <h3 class="sec-title" id="off-h">Off the drawing board</h3>
+        <div class="notes">
+          <div><h4>Filmmaker</h4><p>Been involved in shooting and editing multiple short films and a few commercial shoots.</p></div>
+          <div><h4>Photography</h4><p>Core team member of the college Cultural Committee, shooting events for its official Instagram.</p></div>
+          <div><h4>Art</h4><p>Attended several art workshops at Triveni Kala Sangam.</p></div>
+          <div><h4>Music</h4><p>Intermediate music production and sound design across several DAWs, mostly FL Studio.</p></div>
+        </div>
+      </section>
+
+      <section class="col-5" aria-labelledby="int-h">
+        <h3 class="sec-title" id="int-h">Drawn to</h3>
+        <ul class="plain">
+          <li>Film, culture and visual narratives</li>
+          <li>Identity, cover art and concert visuals for musicians</li>
+          <li>Sound design</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="contact" aria-labelledby="contact-h">
+      <h3 class="sec-title" id="contact-h">Get in touch</h3>
+      <div class="mail-row">
+        <span class="mail" id="mail">ranganmukho12@gmail.com</span>
+        <button class="btn" id="copyMail" type="button">Copy email</button>
+      </div>
+      <div class="links">
+        <a href="https://www.behance.net/ranganmukhopa" target="_blank" rel="noopener">Behance</a>
+        <a href="https://www.linkedin.com/in/rangan-mukhopadhyay-4246a029b" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://www.instagram.com/riggamortus_/" target="_blank" rel="noopener">Instagram</a>
+        <span>Pune, India</span>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ============================== WORK ============================== -->
+<section class="page" id="work" aria-labelledby="work-h" hidden>
+  <div class="page-inner">
+    <header class="page-head">
+      <h2 id="work-h">Work</h2>
+      <div class="head-side">
+        <p>Selected projects. Each one opens its full case study on <a href="https://www.behance.net/ranganmukhopa" target="_blank" rel="noopener">Behance</a>.</p>
+      </div>
+    </header>
+    <div>
+      <div class="work-legend" aria-hidden="true"><span>Project</span><span>Discipline</span><span></span></div>
+      <ul class="work-list" id="workList"></ul>
+    </div>
+  </div>
+</section>
+<div class="cover-peek" id="coverPeek" aria-hidden="true"><img alt=""></div>
+
+<!-- ============================== MUSEUM ============================== -->
+<section class="page" id="museum" aria-labelledby="museum-h" hidden>
+  <div class="page-inner">
+    <header class="page-head">
+      <h2 id="museum-h">Museum</h2>
+      <div class="head-side">
+        <p>Experiments, sketches and loose ends, left in a pile.</p>
+      </div>
+    </header>
+    <div style="display:grid; gap: 28px;">
+      <div class="museum-tools">
+        <span id="museumHow">Drag pieces around the pile. Click one to look closer.</span>
+        <button class="btn" id="shuffle" type="button">Shuffle the pile</button>
+      </div>
+      <div class="cluster" id="cluster"></div>
+    </div>
+  </div>
+</section>
+
+<dialog class="viewer" id="viewer" aria-label="Work viewer">
+  <button class="btn close" id="viewerClose" type="button">Close</button>
+  <figure>
+    <div class="frame" id="viewerFrame"></div>
+    <figcaption><strong id="viewerTitle"></strong><span id="viewerMeta"></span></figcaption>
+  </figure>
+</dialog>
+
+<script src="content/work.js"></script>
+<script src="content/museum.js"></script>
+<script>
+/* Work and Museum entries live in content/work.js and content/museum.js. */
+const PROJECTS = window.PROJECTS || [];
+const MUSEUM = window.MUSEUM || [];
+
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const outside = document.getElementById('outside');
+  const inner = document.getElementById('outsideInner');
+  const vid = document.getElementById('vid');
+  const hint = document.getElementById('hint');
+  const titleEl = document.getElementById('title');
+  if (coarse) hint.textContent = 'Swipe across the glass to clear the mist';
+
+  let pageOpen = false;
+  const play = () => { if (!pageOpen) vid.play().catch(() => {}); };
+  play(); document.addEventListener('pointerdown', play, { once: true });
+
+  /* ---- looking through the window: the scenery shifts against the cursor ---- */
+  if (!reduce) {
+    addEventListener('pointermove', e => {
+      if (pageOpen) return;
+      const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
+      inner.style.setProperty('--px', (-x * 18).toFixed(1) + 'px');
+      inner.style.setProperty('--py', (-y * 10).toFixed(1) + 'px');
+    }, { passive: true });
+  }
+
+  /* ---- passing poles ---- */
+  const pole = document.getElementById('pole');
+  const pass = () => {
+    if (!reduce && !document.hidden && !pageOpen) { pole.classList.remove('pass'); void pole.offsetWidth; pole.classList.add('pass'); }
+    setTimeout(pass, 6000 + Math.random() * 7000);
+  };
+  setTimeout(pass, 3500);
+
+  /* ---- portrait: refit the title so it sits whole and centred on the glass ---- */
+  let titleScale = 1;
+  const fitTitle = () => {
+    titleEl.style.transform = ''; titleEl.style.transformOrigin = '';
+    titleScale = 1;
+    if (innerWidth > innerHeight) return;   // matches the portrait media query (width ≤ height)
+    const spans = [...titleEl.querySelectorAll('.t-line')].map(s => s.getBoundingClientRect());
+    const L = Math.min(...spans.map(r => r.left)), R = Math.max(...spans.map(r => r.right));
+    const T = Math.min(...spans.map(r => r.top)), B = Math.max(...spans.map(r => r.bottom));
+    const pane = outside.getBoundingClientRect(), tr = titleEl.getBoundingClientRect();
+    const visL = Math.max(pane.left, 0), visR = Math.min(pane.right, innerWidth);
+    const s = Math.min(1.4, ((visR - visL) * 0.86) / (R - L));
+    const targetL = visL + ((visR - visL) - (R - L) * s) / 2;
+    const targetT = pane.top + pane.height * 0.30 - ((B - T) * s) / 2;   // up on the pink sky, clear of the dotted treeline
+    titleEl.style.transformOrigin = `${L - tr.left}px ${T - tr.top}px`;
+    titleEl.style.transform = `translate(${targetL - L}px, ${targetT - T}px) scale(${s})`;
+    titleScale = s;
+  };
+
+  /* ---- mist on the glass ----
+     The mist canvas is a low-res, blurred redraw of the view (video + title) under a pale tint.
+     A second canvas holds where the glass has been wiped; that area is cut out of the mist.
+     Inside the pane the wipe fades back slowly; once the pointer leaves, the glass fogs over quickly. */
+  const SCALE = 0.22;
+  const mist = document.getElementById('mist'), mctx = mist.getContext('2d');
+  const wipe = document.createElement('canvas'), wctx = wipe.getContext('2d');
+  const tint = getComputedStyle(document.documentElement).getPropertyValue('--mist').trim() || '238,222,236';
+  const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#094ae6';
+  let pw = 0, ph = 0, inside = false, last = null, wipedOnce = false;
+  let lines = [];
+
+  const measure = () => {
+    fitTitle();
+    const r = outside.getBoundingClientRect();
+    pw = r.width; ph = r.height;
+    mist.width = wipe.width = Math.max(2, Math.round(pw * SCALE));
+    mist.height = wipe.height = Math.max(2, Math.round(ph * SCALE));
+    lines = [...document.querySelectorAll('.t-line')].map(el => {
+      const cs = getComputedStyle(el), lr = el.getBoundingClientRect(), b = el.querySelector('.bm').getBoundingClientRect();
+      return {
+        text: el.firstChild.textContent,
+        x: lr.left - r.left, y: b.top - r.top,
+        font: `${cs.fontWeight} ${parseFloat(cs.fontSize) * titleScale * SCALE}px ${el.dataset.font === 'title' ? 'Dirtyline' : 'Heming'}`,
+        ls: (parseFloat(cs.letterSpacing) || 0) * titleScale * SCALE
+      };
+    });
+  };
+
+  const drawCover = (ctx, media, W, H, ox, oy, s) => {
+    const iw = media.videoWidth || media.naturalWidth, ih = media.videoHeight || media.naturalHeight;
+    if (!iw) return;
+    const k = Math.max(W / iw, H / ih), dw = iw * k, dh = ih * k;
+    ctx.drawImage(media, (ox + (W - dw) / 2) * s, (oy + (H - dh) / 2) * s, dw * s, dh * s);
+  };
+
+  const render = () => {
+    requestAnimationFrame(render);
+    if (pageOpen) return;
+    const W = mist.width, H = mist.height;
+    mctx.globalCompositeOperation = 'source-over';
+    mctx.fillStyle = getComputedStyle(outside).backgroundColor; mctx.fillRect(0, 0, W, H);
+    const ir = inner.getBoundingClientRect(), r = outside.getBoundingClientRect();
+    if (vid.readyState >= 2) drawCover(mctx, vid, ir.width, ir.height, ir.left - r.left, ir.top - r.top, SCALE);
+    mctx.fillStyle = ink;
+    for (const l of lines) { mctx.font = l.font; if ('letterSpacing' in mctx) mctx.letterSpacing = l.ls + 'px'; mctx.fillText(l.text, l.x * SCALE, l.y * SCALE); }
+    if ('letterSpacing' in mctx) mctx.letterSpacing = '0px';
+    const g = mctx.createRadialGradient(W * .5, H * .5, Math.min(W, H) * .2, W * .5, H * .5, Math.max(W, H) * .7);
+    g.addColorStop(0, `rgba(${tint},.55)`); g.addColorStop(1, `rgba(${tint},.78)`);
+    mctx.fillStyle = g; mctx.fillRect(0, 0, W, H);
+    wctx.globalCompositeOperation = 'destination-out';
+    wctx.fillStyle = `rgba(0,0,0,${inside ? 0.012 : 0.06})`;
+    wctx.fillRect(0, 0, W, H);
+    mctx.globalCompositeOperation = 'destination-out';
+    mctx.drawImage(wipe, 0, 0);
+  };
+
+  const brush = (x, y) => {
+    const rad = Math.max(pw, ph) * (coarse ? 0.09 : 0.07) * SCALE;
+    const steps = last ? Math.max(1, Math.ceil(Math.hypot(x - last.x, y - last.y) / (rad * 0.3))) : 1;
+    wctx.globalCompositeOperation = 'source-over';
+    for (let i = 1; i <= steps; i++) {
+      const px = last ? last.x + (x - last.x) * i / steps : x;
+      const py = last ? last.y + (y - last.y) * i / steps : y;
+      const g = wctx.createRadialGradient(px, py, 0, px, py, rad);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.55, 'rgba(0,0,0,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      wctx.fillStyle = g; wctx.beginPath(); wctx.arc(px, py, rad, 0, Math.PI * 2); wctx.fill();
+    }
+    last = { x, y };
+    if (!wipedOnce) { wipedOnce = true; hint.classList.add('gone'); }
+  };
+
+  const onMove = e => {
+    if (pageOpen) return;
+    const r = outside.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    inside = x >= 0 && y >= 0 && x <= r.width && y <= r.height && y > document.querySelector('.nav ul').getBoundingClientRect().bottom - r.top;
+    if (!inside) { last = null; return; }
+    brush(x * SCALE, y * SCALE);
+  };
+  addEventListener('pointermove', onMove, { passive: true });
+  addEventListener('pointerdown', onMove, { passive: true });
+  const leave = () => { inside = false; last = null; };
+  document.documentElement.addEventListener('pointerleave', leave);
+  addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') leave(); });
+  addEventListener('pointercancel', leave);
+  addEventListener('blur', leave);
+
+  document.fonts.ready.then(() => { measure(); requestAnimationFrame(render); });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { measure(); layoutCluster(); }, 120); });
+
+  /* ---- station board: nav labels flip through characters on hover ---- */
+  const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  document.querySelectorAll('.nav a').forEach(a => {
+    const label = a.dataset.label; let timer;
+    const flip = () => {
+      if (reduce || coarse) return;
+      clearInterval(timer); let frame = 0;
+      timer = setInterval(() => {
+        a.textContent = label.split('').map((c, i) =>
+          c === ' ' || i < frame / 2 ? c : glyphs[Math.floor(Math.random() * glyphs.length)]).join('');
+        if (++frame > label.length * 2) { clearInterval(timer); a.textContent = label; }
+      }, 28);
+    };
+    a.addEventListener('mouseenter', flip);
+    a.addEventListener('focus', flip);
+  });
+
+  /* ======================================================================
+     Carriages: hash routing between the window and the three pages
+     ====================================================================== */
+  const PAGES = ['about', 'work', 'museum'];
+  let current = null;
+  const route = () => {
+    const id = location.hash.slice(1);
+    const next = PAGES.includes(id) ? id : null;
+    if (next === current) return;
+    const prevEl = current && document.getElementById(current);
+    const nextEl = next && document.getElementById(next);
+    if (prevEl) {
+      prevEl.classList.remove('open');
+      if (nextEl) {
+        prevEl.classList.add('past');
+        setTimeout(() => { if (!prevEl.classList.contains('open')) { prevEl.classList.remove('past'); prevEl.hidden = true; } }, 820);
+      } else {
+        setTimeout(() => { if (!prevEl.classList.contains('open')) prevEl.hidden = true; }, 820);
+      }
+    }
+    if (nextEl) {
+      nextEl.hidden = false; nextEl.classList.remove('past');
+      void nextEl.offsetWidth;
+      nextEl.classList.add('open');
+      nextEl.scrollTop = 0;
+      if (next === 'museum') requestAnimationFrame(layoutCluster);
+    }
+    current = next;
+    pageOpen = !!next;
+    document.querySelectorAll('.piece video').forEach(v => { if (next === 'museum' && !reduce) v.play().catch(() => {}); else v.pause(); });
+    if (next) { document.body.dataset.page = next; vid.pause(); leave(); }
+    else { delete document.body.dataset.page; play(); }
+    document.querySelectorAll('.nav a').forEach(a => {
+      if (a.getAttribute('href') === '#' + next) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    if (nextEl) setTimeout(() => nextEl.querySelector('h2').focus({ preventScroll: true }), reduce ? 0 : 400);
+  };
+  document.querySelectorAll('.page h2').forEach(h => h.tabIndex = -1);
+  addEventListener('hashchange', route);
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape' && current && !document.getElementById('viewer').open) location.hash = '';
+  });
+  route();
+
+  /* ---- About: copy email ---- */
+  const copyBtn = document.getElementById('copyMail'), mailEl = document.getElementById('mail');
+  copyBtn.addEventListener('click', () => {
+    const done = () => { copyBtn.textContent = 'Copied'; setTimeout(() => copyBtn.textContent = 'Copy email', 1800); };
+    const fallback = () => { const sel = getSelection(), rg = document.createRange(); rg.selectNodeContents(mailEl); sel.removeAllRanges(); sel.addRange(rg); copyBtn.textContent = 'Selected, press copy'; setTimeout(() => copyBtn.textContent = 'Copy email', 2400); };
+    try { navigator.clipboard.writeText(mailEl.textContent).then(done, fallback); } catch (err) { fallback(); }
+  });
+
+  /* ---- Work: render the index ---- */
+  const list = document.getElementById('workList');
+  const peek = document.getElementById('coverPeek'), peekImg = peek.querySelector('img');
+  PROJECTS.forEach(p => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.className = 'work-row'; a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
+    const onDrive = /drive\.google\.com/.test(p.url);
+    a.innerHTML = `<div><h3></h3><p class="desc"></p></div><span class="meta d"></span><span class="go"></span>`;
+    a.querySelector('.go').textContent = onDrive ? 'Watch the film' : 'View on Behance';
+    a.querySelector('h3').innerHTML = p.title.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\d+/g, d => `<span class="num">${d}</span>`);
+    a.querySelector('.desc').textContent = p.desc;
+    a.querySelector('.d').textContent = p.year ? `${p.discipline}, ${p.year}` : p.discipline;
+    a.setAttribute('aria-label', `${p.title}, ${p.discipline}. Opens on ${onDrive ? 'Google Drive' : 'Behance'}`);
+    if (p.cover && !coarse) {
+      a.addEventListener('mouseenter', () => { peekImg.src = p.cover; peek.classList.add('on'); });
+      a.addEventListener('mouseleave', () => peek.classList.remove('on'));
+      a.addEventListener('mousemove', e => { peek.style.transform = `translate3d(${e.clientX + 24}px, ${e.clientY - 120}px, 0) rotate(-2deg)`; });
+    }
+    li.appendChild(a); list.appendChild(li);
+  });
+
+  /* ---- Museum: a cluster you can rearrange ---- */
+  const cluster = document.getElementById('cluster');
+  const viewer = document.getElementById('viewer');
+  document.getElementById('museumHow').textContent = coarse
+    ? 'Tap a piece to look closer. Shuffle to rearrange the pile.'
+    : 'Drag pieces around the pile. Click one to look closer.';
+  let seed = 7, zTop = 100;
+  const rand = (n) => { const x = Math.sin(n * 9301 + seed * 49297) * 233280; return x - Math.floor(x); };
+
+  const pieces = MUSEUM.map((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'piece' + (m.empty ? ' empty' : '');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', m.empty ? 'Empty frame' : `Open ${m.title}`);
+    if (m.empty) el.innerHTML = '<span>awaiting work</span>';
+    else if (m.video) {
+      const v = document.createElement('video');
+      v.src = m.video; v.poster = m.src; v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'metadata';
+      v.setAttribute('aria-hidden', 'true'); el.appendChild(v); el.dataset.video = '1';
+    }
+    else { const img = new Image(); img.src = m.src; img.alt = m.title; img.decoding = 'async'; img.loading = 'lazy'; el.appendChild(img); }
+    cluster.appendChild(el);
+    return { el, m, i };
+  });
+
+  function layoutCluster() {
+    const W = cluster.clientWidth;
+    if (!W) return;
+    const few = pieces.length < 7 ? 1.55 : 1;   /* a small pile gets bigger pieces */
+    const base = W < 600 ? W * 0.4 * Math.min(few, 1.35) : Math.min(250 * few, Math.max(130, W * 0.17 * few));
+    const sizeMix = [1.3, 1, 0.82, 1.12, 0.9, 1.05, 0.78];
+    const order = pieces.map(p => p).sort((a, b) => rand(a.i + 1) - rand(b.i + 1));
+    const placed = [];
+    for (const p of order) {
+      const a = p.m.w / p.m.h, f = sizeMix[(p.i + seed) % sizeMix.length];
+      let w = Math.sqrt(base * base * f * f * a), h = w / a;
+      if (w > W * 0.62) { w = W * 0.62; h = w / a; }
+      let spot = null;
+      for (let k = 0; k < 4000 && !spot; k++) {
+        const ang = k * 0.47 + seed, rad = 3.2 * Math.pow(k, 0.86);
+        const x = Math.cos(ang) * rad * (W < 600 ? 1 : 1.35), y = Math.sin(ang) * rad * (W < 600 ? 0.95 : 0.75);
+        if (Math.abs(x) + w / 2 > W / 2 - 6) continue;
+        const ok = placed.every(q => {
+          const ox = Math.max(0, Math.min(x + w / 2, q.x + q.w / 2) - Math.max(x - w / 2, q.x - q.w / 2));
+          const oy = Math.max(0, Math.min(y + h / 2, q.y + q.h / 2) - Math.max(y - h / 2, q.y - q.h / 2));
+          return ox * oy < 0.1 * Math.min(w * h, q.w * q.h);
+        });
+        if (ok) spot = { x, y };
+      }
+      if (!spot) spot = { x: 0, y: placed.length * 40 };
+      placed.push({ p, x: spot.x, y: spot.y, w, h });
+    }
+    const minY = Math.min(...placed.map(q => q.y - q.h / 2)), maxY = Math.max(...placed.map(q => q.y + q.h / 2));
+    const pad = 24;
+    cluster.style.height = (maxY - minY + pad * 2) + 'px';
+    for (const q of placed) {
+      const el = q.p.el;
+      el.style.width = q.w + 'px'; el.style.height = q.h + 'px';
+      el.style.setProperty('--x', (W / 2 + q.x - q.w / 2) + 'px');
+      el.style.setProperty('--y', (q.y - q.h / 2 - minY + pad) + 'px');
+      el.style.setProperty('--r', ((rand(q.p.i + 31) - 0.5) * 9).toFixed(2) + 'deg');
+      el.style.zIndex = q.p.i + 1;
+    }
+  }
+
+  if (current === 'museum' && !reduce) cluster.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
+
+  document.getElementById('shuffle').addEventListener('click', () => { seed += 1; layoutCluster(); });
+
+  const openViewer = (m) => {
+    const frame = document.getElementById('viewerFrame');
+    frame.innerHTML = '';
+    if (m.empty) {
+      frame.className = '';
+      const d = document.createElement('div'); d.className = 'blank';
+      d.textContent = 'This frame is waiting for a work.'; frame.appendChild(d);
+      document.getElementById('viewerTitle').textContent = 'Empty frame';
+      document.getElementById('viewerMeta').textContent = '';
+    } else {
+      frame.className = 'frame';
+      if (m.video) {
+        const v = document.createElement('video');
+        v.src = m.video; v.poster = m.src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true; v.controls = true;
+        frame.appendChild(v);
+      } else { const img = new Image(); img.src = m.src; img.alt = m.title; frame.appendChild(img); }
+      document.getElementById('viewerTitle').textContent = m.title;
+      document.getElementById('viewerMeta').textContent = m.meta || '';
+    }
+    viewer.showModal();
+  };
+  document.getElementById('viewerClose').addEventListener('click', () => viewer.close());
+  viewer.addEventListener('close', () => { const v = viewer.querySelector('video'); if (v) v.pause(); });
+  viewer.addEventListener('click', e => { if (e.target === viewer) viewer.close(); });
+
+  pieces.forEach(({ el, m }) => {
+    let start = null, origin = null, moved = false, dragging = false;
+    el.addEventListener('pointerdown', e => {
+      start = { x: e.clientX, y: e.clientY };
+      origin = { x: parseFloat(el.style.getPropertyValue('--x')), y: parseFloat(el.style.getPropertyValue('--y')) };
+      moved = false; dragging = e.pointerType === 'mouse' || e.pointerType === 'pen';
+      if (dragging) { el.setPointerCapture(e.pointerId); el.style.zIndex = ++zTop; }
+    });
+    el.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (Math.hypot(dx, dy) > 6) moved = true;
+      if (dragging && moved) {
+        el.classList.add('dragging');
+        el.style.setProperty('--x', (origin.x + dx) + 'px');
+        el.style.setProperty('--y', (origin.y + dy) + 'px');
+      }
+    });
+    const end = () => {
+      if (!start) return;
+      el.classList.remove('dragging');
+      if (!moved) openViewer(m);
+      start = null;
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', () => { el.classList.remove('dragging'); start = null; });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openViewer(m); } });
+  });
+
+  window.layoutCluster = layoutCluster;
+})();
+</script>
+
+</body>
+</html>
