@@ -309,6 +309,51 @@ body[data-page] .lines { opacity: 0; visibility: hidden; }
   .t-ver { right: auto; left: 49.42cqw; translate: -100% 0; }   /* keep "1.5" under the end of the word on a narrow pane */
 }
 
+/* ---------- desktop: knock three times to break the glass ---------- */
+.cracks { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+@media (pointer: fine) and (min-aspect-ratio: 1 / 1) { .outside { cursor: pointer; } }
+body.broken .outside { cursor: default; }
+.knock {
+  position: absolute; left: 5.5%; bottom: 8%;
+  display: flex; align-items: center; gap: 8px;
+  pointer-events: none; opacity: 0; transition: opacity .9s ease;
+}
+.knock.show { opacity: 1; }
+.knock.gone, body.broken .knock { opacity: 0; transition-duration: .3s; }
+.knock i {
+  position: relative; width: 12px; height: 12px; border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .14), 0 1px 3px rgba(0, 0, 0, .3);
+}
+.knock i::after {
+  content: ""; position: absolute; inset: -1.5px; border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, .85);
+  animation: knock-ripple 2.6s cubic-bezier(.2, .7, .3, 1) infinite;
+}
+@keyframes knock-ripple { 0% { transform: scale(1); opacity: .9; } 60%, 100% { transform: scale(2.8); opacity: 0; } }
+.knock span { font: 400 11px/1 var(--display); letter-spacing: .06em; color: rgba(255, 255, 255, .92); text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
+@media (pointer: coarse), (max-aspect-ratio: 1 / 1) { .knock { display: none; } }
+
+/* loose title letters, free to drag anywhere once the glass is gone */
+.letters { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+body[data-page] .letters, body[data-page] .fx, body[data-page] .fix { visibility: hidden; }
+.letter {
+  position: fixed; left: 0; top: 0; pointer-events: auto;
+  line-height: 1; white-space: pre; padding: 0 .03em;
+  color: var(--ink);
+  -webkit-text-stroke: .045em var(--accent); paint-order: stroke fill;
+  text-shadow: 0 8px 22px rgba(0, 0, 0, .4);
+  cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
+  will-change: transform;
+}
+.letter.held { cursor: grabbing; text-shadow: 0 16px 34px rgba(0, 0, 0, .5); }
+.fx { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 4; pointer-events: none; }
+.fix {
+  position: fixed; z-index: 4; left: 50%; translate: -50% 0;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  background: var(--carriage-glass);
+}
+
 /* ======================================================================
    Carriages: About, Work, Museum
    ====================================================================== */
@@ -638,6 +683,8 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
         </h1>
         <div class="pole" id="pole"></div>
         <canvas class="mist" id="mist" aria-hidden="true"></canvas>
+        <canvas class="cracks" id="cracks" aria-hidden="true"></canvas>
+        <div class="knock" id="knock" aria-hidden="true"><i></i><span>knock</span></div>
       </div>
       <picture>
         <source media="(max-aspect-ratio: 1/1)" srcset="assets/interior-mobile.webp">
@@ -646,6 +693,10 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
     </div>
   </div>
 </div>
+
+<div class="letters" id="letters" hidden></div>
+<canvas class="fx" id="fx" aria-hidden="true"></canvas>
+<button class="btn fix" id="fixWindow" type="button" hidden>Fix the window</button>
 
 <nav class="nav" aria-label="Main">
   <ul>
@@ -863,6 +914,7 @@ const MUSEUM = window.MUSEUM || [];
   if (coarse) hint.textContent = 'Swipe across the glass to clear the mist';
 
   let pageOpen = false;
+  let broken = false;   // the window has been smashed (desktop)
   /* colours the mist canvas paints with; refreshed whenever the line changes */
   let tint = '238,222,236', ink = '#094ae6', skyCol = '#f3c1ea';
   const readLineColours = () => {
@@ -1039,7 +1091,7 @@ const MUSEUM = window.MUSEUM || [];
 
   const render = () => {
     requestAnimationFrame(render);
-    if (pageOpen) return;
+    if (pageOpen || broken) return;
     const W = mist.width, H = mist.height;
     mctx.globalCompositeOperation = 'source-over';
     mctx.fillStyle = skyCol; mctx.fillRect(0, 0, W, H);
@@ -1074,7 +1126,7 @@ const MUSEUM = window.MUSEUM || [];
   };
 
   const onMove = e => {
-    if (pageOpen) return;
+    if (pageOpen || broken) return;
     const r = outside.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
     inside = x >= 0 && y >= 0 && x <= r.width && y <= r.height && y > document.querySelector('.nav ul').getBoundingClientRect().bottom - r.top;
@@ -1306,6 +1358,272 @@ const MUSEUM = window.MUSEUM || [];
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', () => { el.classList.remove('dragging'); start = null; });
     el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openViewer(m); } });
+  });
+
+  /* ======================================================================
+     Desktop: knock on the glass three times to break it. The title spills out as loose letters
+     that can be dragged anywhere: thrown hard they bounce off the walls, set down gently they stay put.
+     ====================================================================== */
+  const crackCv = document.getElementById('cracks'), cctx = crackCv.getContext('2d');
+  const fx = document.getElementById('fx'), fxc = fx.getContext('2d');
+  const knockMark = document.getElementById('knock');
+  const fixBtn = document.getElementById('fixWindow');
+  const layer = document.getElementById('letters');
+  const navBar = document.querySelector('.nav ul');
+  const canBreak = () => !coarse && innerWidth > innerHeight;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  let knocks = 0;
+  setTimeout(() => knockMark.classList.add('show'), 2500);
+
+  const fitCanvas = (cv, w, h) => {
+    const d = Math.min(devicePixelRatio || 1, 2);
+    cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+    cv.getContext('2d').setTransform(d, 0, 0, d, 0, 0);
+  };
+  const paneSize = () => ({ W: outside.offsetWidth, H: outside.offsetHeight });
+
+  // spider-web cracks around an impact, in pane pixels
+  const drawCrack = (x, y, scale) => {
+    const paths = [], rays = Math.round(rnd(7, 11));
+    for (let i = 0; i < rays; i++) {
+      let a = (i / rays) * Math.PI * 2 + rnd(-.25, .25), len = rnd(60, 220) * scale, px = x, py = y;
+      const pts = [[px, py]];
+      while (len > 0) {
+        const seg = rnd(9, 24); a += rnd(-.32, .32); px += Math.cos(a) * seg; py += Math.sin(a) * seg; pts.push([px, py]); len -= seg;
+        if (Math.random() < .18) {
+          let bx = px, by = py, ba = a + rnd(-.9, .9), bl = rnd(18, 70) * scale; const bp = [[bx, by]];
+          while (bl > 0) { const s2 = rnd(7, 16); ba += rnd(-.3, .3); bx += Math.cos(ba) * s2; by += Math.sin(ba) * s2; bp.push([bx, by]); bl -= s2; }
+          paths.push(bp);
+        }
+      }
+      paths.push(pts);
+    }
+    for (const r0 of [rnd(12, 20) * scale, rnd(30, 46) * scale]) {
+      const n = rays * 2, ring = [];
+      for (let i = 0; i <= n; i++) { const t = (i / n) * Math.PI * 2, rr = r0 * rnd(.8, 1.15); ring.push([x + Math.cos(t) * rr, y + Math.sin(t) * rr]); }
+      for (let i = 0; i < n; i++) if (Math.random() < .7) paths.push([ring[i], ring[i + 1]]);
+    }
+    cctx.lineCap = 'round'; cctx.lineJoin = 'round';
+    const stroke = (style, w, d) => {
+      cctx.strokeStyle = style; cctx.lineWidth = w;
+      for (const pth of paths) { cctx.beginPath(); cctx.moveTo(pth[0][0] + d, pth[0][1] + d); for (const q of pth.slice(1)) cctx.lineTo(q[0] + d, q[1] + d); cctx.stroke(); }
+    };
+    stroke('rgba(0,0,0,.22)', 1.6, .8);
+    stroke('rgba(255,255,255,.88)', 1, 0);
+    const g = cctx.createRadialGradient(x, y, 0, x, y, 14 * scale);
+    g.addColorStop(0, 'rgba(255,255,255,.75)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    cctx.fillStyle = g; cctx.beginPath(); cctx.arc(x, y, 14 * scale, 0, Math.PI * 2); cctx.fill();
+  };
+
+  // keep a polygon inside the pane (Sutherland–Hodgman against its four edges)
+  const clipToRect = (poly, W, H) => {
+    const edges = [
+      [p => p[0] >= 0, (a, b) => { const t = (0 - a[0]) / (b[0] - a[0]); return [0, a[1] + t * (b[1] - a[1])]; }],
+      [p => p[0] <= W, (a, b) => { const t = (W - a[0]) / (b[0] - a[0]); return [W, a[1] + t * (b[1] - a[1])]; }],
+      [p => p[1] >= 0, (a, b) => { const t = (0 - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), 0]; }],
+      [p => p[1] <= H, (a, b) => { const t = (H - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), H]; }],
+    ];
+    for (const [isIn, cut] of edges) {
+      const out = [];
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        if (isIn(a)) { out.push(a); if (!isIn(b)) out.push(cut(a, b)); }
+        else if (isIn(b)) out.push(cut(a, b));
+      }
+      poly = out; if (!poly.length) break;
+    }
+    return poly;
+  };
+
+  const shardPath = (ctx, poly) => { ctx.beginPath(); ctx.moveTo(poly[0][0], poly[0][1]); for (const q of poly.slice(1)) ctx.lineTo(q[0], q[1]); ctx.closePath(); };
+  const drawShard = (ctx, snap, s, x, y, a, sc, alpha) => {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(a); ctx.scale(sc, sc);
+    shardPath(ctx, s.poly); ctx.save(); ctx.clip();
+    ctx.fillStyle = `rgba(${tint},.16)`; ctx.fill();
+    ctx.drawImage(snap, -s.sx, -s.sy);
+    ctx.restore();
+    ctx.lineWidth = 1.2 / sc; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.stroke();
+    ctx.restore();
+  };
+
+  let shardRaf = 0;
+  const runShards = (flying, snap) => {
+    fitCanvas(fx, innerWidth, innerHeight);
+    let last = performance.now();
+    const tick = (t) => {
+      const dt = Math.min(.033, (t - last) / 1000); last = t;
+      fxc.clearRect(0, 0, innerWidth, innerHeight);
+      let alive = 0;
+      for (const s of flying) {
+        s.life += dt; s.vy += 2400 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.a += s.va * dt;
+        const alpha = Math.max(0, 1 - Math.max(0, s.life - .7) / .6);
+        if (alpha <= 0 || s.y - 200 > innerHeight) continue;
+        alive++;
+        drawShard(fxc, snap, s, s.x, s.y, s.a, s.k * (1 + s.life * .35), alpha);
+      }
+      shardRaf = alive ? requestAnimationFrame(tick) : 0;
+      if (!alive) fxc.clearRect(0, 0, innerWidth, innerHeight);
+    };
+    cancelAnimationFrame(shardRaf); shardRaf = requestAnimationFrame(tick);
+  };
+
+  const thud = () => { if (!reduce) outside.animate([{ translate: '0 0' }, { translate: '2px 1px' }, { translate: '-1.5px -1px' }, { translate: '0 0' }], { duration: 170 }); };
+
+  const shatter = (ix, iy) => {
+    broken = true; leave();
+    document.body.classList.add('broken'); hint.classList.add('gone');
+    const r = outside.getBoundingClientRect(), { W, H } = paneSize(), k = r.width / W;
+    // what the glass looked like the moment it broke: mist plus cracks
+    const snap = document.createElement('canvas'); snap.width = W; snap.height = H;
+    const sc = snap.getContext('2d');
+    sc.filter = 'blur(5px)'; sc.drawImage(mist, -W * .02, -H * .02, W * 1.04, H * 1.04); sc.filter = 'none';
+    sc.drawImage(crackCv, 0, 0, W, H);
+    // shards: cells between jittered rays and rings around the impact
+    const rays = 16, ang = Array.from({ length: rays }, (_, i) => (i / rays) * Math.PI * 2 + rnd(-.12, .12));
+    const R = Math.hypot(Math.max(ix, W - ix), Math.max(iy, H - iy));
+    const rings = [0, R * .08, R * .2, R * .36, R * .56, R * .8, R * 1.15];
+    const jit = rings.map(r0 => ang.map(() => r0 * rnd(.88, 1.12)));
+    const pt = (ri, ai) => { const j = (ai + rays) % rays; return [ix + Math.cos(ang[j]) * jit[ri][j], iy + Math.sin(ang[j]) * jit[ri][j]]; };
+    const shards = [];
+    for (let ri = 0; ri < rings.length - 1; ri++) for (let ai = 0; ai < rays; ai++) {
+      let poly = ri === 0 ? [[ix, iy], pt(1, ai), pt(1, ai + 1)] : [pt(ri, ai), pt(ri + 1, ai), pt(ri + 1, ai + 1), pt(ri, ai + 1)];
+      poly = clipToRect(poly, W, H); if (poly.length < 3) continue;
+      const cx = poly.reduce((a, p) => a + p[0], 0) / poly.length, cy = poly.reduce((a, p) => a + p[1], 0) / poly.length;
+      shards.push({ poly: poly.map(p => [p[0] - cx, p[1] - cy]), sx: cx, sy: cy,
+        edge: poly.some(p => p[0] < 2 || p[1] < 2 || p[0] > W - 2 || p[1] > H - 2), dist: Math.hypot(cx - ix, cy - iy) });
+    }
+    // a few jagged pieces stay stuck in the frame
+    fitCanvas(crackCv, W, H);
+    const stuck = shards.filter(s => s.edge && s.dist > R * .45 && Math.random() < .4);
+    for (const s of stuck) drawShard(cctx, snap, s, s.sx, s.sy, 0, 1, .9);
+    // the rest fall out of the frame, towards you
+    const flying = shards.filter(s => !stuck.includes(s)).map(s => {
+      const dx = s.sx - ix, dy = s.sy - iy, d = Math.hypot(dx, dy) || 1, push = rnd(120, 420);
+      return { ...s, x: r.left + s.sx * k, y: r.top + s.sy * k, vx: dx / d * push + rnd(-60, 60), vy: dy / d * push * .6 + rnd(-280, -40), a: 0, va: rnd(-6, 6), k, life: 0 };
+    });
+    mist.style.visibility = 'hidden';
+    runShards(flying, snap);
+    spawnLetters(r.left + ix * k, r.top + iy * k);
+    fixBtn.hidden = false;
+  };
+
+  document.addEventListener('pointerdown', e => {
+    if (broken || pageOpen || !canBreak() || e.button !== 0) return;
+    if (e.target.closest('.nav, .lines, .float-back, .letter, button, a, dialog')) return;
+    const r = outside.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    if (e.clientY < navBar.getBoundingClientRect().bottom) return;
+    const { W, H } = paneSize(), k = W / r.width, x = (e.clientX - r.left) * k, y = (e.clientY - r.top) * k;
+    knocks++;
+    if (knocks === 1) { fitCanvas(crackCv, W, H); knockMark.classList.add('gone'); }
+    thud();
+    drawCrack(x, y, [0, .8, 1.15, 1.4][Math.min(knocks, 3)]);
+    if (knocks >= 3) shatter(x, y);
+  });
+
+  /* ---- loose letters: low gravity, bouncy walls, calm drops stay put ---- */
+  const GRAVITY = 70, DRAG = .45, BOUNCE = .82, REST = 14, CALM = 140;
+  const letters = []; let zTopL = 10, lraf = 0, lastL = 0;
+  const placeL = L => { L.el.style.transform = `translate3d(${L.x}px, ${L.y}px, 0) rotate(${L.a}rad)`; };
+  const bounds = () => ({ top: navBar.getBoundingClientRect().bottom, w: innerWidth, h: innerHeight });
+  const clampL = L => { const B = bounds(); L.x = Math.min(Math.max(L.x, 0), B.w - L.w); L.y = Math.min(Math.max(L.y, B.top), B.h - L.h); };
+
+  function grab(e) {
+    const L = letters.find(l => l.el === e.currentTarget); if (!L) return;
+    e.preventDefault(); e.stopPropagation();
+    L.el.setPointerCapture(e.pointerId);
+    L.el.style.transition = '';
+    L.held = true; L.rest = false; L.el.classList.add('held'); L.el.style.zIndex = ++zTopL;
+    L.gx = e.clientX - L.x; L.gy = e.clientY - L.y; L.trail = [[performance.now(), e.clientX, e.clientY]];
+    const move = ev => {
+      L.x = ev.clientX - L.gx; L.y = ev.clientY - L.gy; clampL(L);
+      const now = performance.now(); L.trail.push([now, ev.clientX, ev.clientY]);
+      while (L.trail.length > 2 && now - L.trail[0][0] > 90) L.trail.shift();
+    };
+    const up = () => {
+      L.el.removeEventListener('pointermove', move); L.el.removeEventListener('pointerup', up); L.el.removeEventListener('pointercancel', up);
+      L.held = false; L.el.classList.remove('held');
+      const a = L.trail[0], b = L.trail[L.trail.length - 1], dt = Math.max(16, b[0] - a[0]) / 1000;
+      const still = performance.now() - b[0] > 90;   // held still before letting go
+      L.vx = still ? 0 : (b[1] - a[1]) / dt; L.vy = still ? 0 : (b[2] - a[2]) / dt;
+      if (Math.hypot(L.vx, L.vy) < CALM) { L.vx = L.vy = L.va = 0; L.rest = true; }   // set down gently: it stays
+      else L.va = L.vx / 900;
+      wakeL();
+    };
+    L.el.addEventListener('pointermove', move); L.el.addEventListener('pointerup', up); L.el.addEventListener('pointercancel', up);
+    wakeL();
+  }
+
+  const spawnLetters = (bx, by) => {
+    layer.hidden = false;
+    document.querySelectorAll('.t-line').forEach(line => {
+      const node = line.firstChild, text = node.textContent, cs = getComputedStyle(line);
+      for (let i = 0; i < text.length; i++) {
+        const rg = document.createRange(); rg.setStart(node, i); rg.setEnd(node, i + 1);
+        const b = rg.getBoundingClientRect(); if (!b.width) continue;
+        const el = document.createElement('span'); el.className = 'letter'; el.textContent = text[i];
+        el.style.fontFamily = cs.fontFamily; el.style.fontWeight = cs.fontWeight;
+        el.style.fontSize = (parseFloat(cs.fontSize) * titleScale) + 'px';
+        layer.appendChild(el);
+        const w = el.offsetWidth, h = el.offsetHeight;
+        const L = { el, w, h, x: b.left + b.width / 2 - w / 2, y: b.top + b.height / 2 - h / 2, a: 0, vx: 0, vy: 0, va: 0, held: false, rest: false };
+        L.hx = L.x; L.hy = L.y;
+        const dx = L.x + w / 2 - bx, dy = L.y + h / 2 - by, d = Math.hypot(dx, dy) || 1, push = rnd(160, 380);
+        L.vx = dx / d * push; L.vy = dy / d * push - rnd(40, 160); L.va = rnd(-2.5, 2.5);
+        placeL(L); letters.push(L);
+        el.addEventListener('pointerdown', grab);
+      }
+    });
+    titleEl.style.visibility = 'hidden';
+    wakeL();
+  };
+
+  const stepL = (t) => {
+    const dt = Math.min(.033, (t - lastL) / 1000 || .016); lastL = t;
+    const B = bounds(); let awake = false;
+    for (const L of letters) {
+      if (L.held) { awake = true; L.a += (0 - L.a) * Math.min(1, dt * 8); placeL(L); continue; }
+      if (L.rest) continue;
+      awake = true;
+      L.vy += GRAVITY * dt;
+      const f = Math.exp(-DRAG * dt); L.vx *= f; L.vy *= f; L.va *= Math.exp(-1.2 * dt);
+      L.x += L.vx * dt; L.y += L.vy * dt; L.a += L.va * dt;
+      if (L.x < 0) { L.x = 0; L.vx = Math.abs(L.vx) * BOUNCE; L.va = -L.va * .8; }
+      if (L.x + L.w > B.w) { L.x = B.w - L.w; L.vx = -Math.abs(L.vx) * BOUNCE; L.va = -L.va * .8; }
+      if (L.y < B.top) { L.y = B.top; L.vy = Math.abs(L.vy) * BOUNCE; }
+      if (L.y + L.h >= B.h) {
+        L.y = B.h - L.h;
+        L.vy = Math.abs(L.vy) < 40 ? 0 : -Math.abs(L.vy) * BOUNCE;
+        L.vx *= Math.exp(-3 * dt); L.va *= Math.exp(-4 * dt);
+        if (Math.abs(L.vx) < REST && L.vy === 0) { L.vx = 0; L.va = 0; L.rest = true; }
+      }
+      placeL(L);
+    }
+    return awake;
+  };
+  const loopL = (t) => { lraf = stepL(t) ? requestAnimationFrame(loopL) : 0; };
+  function wakeL() { if (!lraf) { lastL = performance.now(); lraf = requestAnimationFrame(loopL); } }
+  addEventListener('resize', () => { if (!letters.length) return; letters.forEach(L => { clampL(L); placeL(L); }); });
+
+  fixBtn.addEventListener('click', () => {
+    fixBtn.hidden = true;
+    cancelAnimationFrame(lraf); lraf = 0;
+    letters.forEach(L => {
+      L.el.style.transition = 'transform .9s cubic-bezier(.2, .8, .2, 1)';
+      L.x = L.hx; L.y = L.hy; L.a = 0; placeL(L);
+    });
+    setTimeout(() => {
+      layer.innerHTML = ''; letters.length = 0; layer.hidden = true;
+      titleEl.style.visibility = '';
+      const { W, H } = paneSize();
+      cctx.clearRect(0, 0, W, H);
+      wctx.clearRect(0, 0, wipe.width, wipe.height);
+      mist.style.visibility = '';
+      broken = false; knocks = 0;
+      document.body.classList.remove('broken');
+      knockMark.classList.remove('gone');
+      measure();
+    }, reduce ? 0 : 950);
   });
 
   window.layoutCluster = layoutCluster;
