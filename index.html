@@ -34,11 +34,41 @@
   --muted: rgba(236, 226, 234, 0.62);
   --rule: rgba(243, 193, 234, 0.16);
   --mist: 238, 222, 236;    /* condensation tint (rgb triplet for canvas) */
+  --accent: #f3c1ea;        /* headings, links and highlights on the pages */
+  --on-accent: #094ae6;     /* marks drawn on an accent surface */
   --display: "Heming", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --title: "Dirtyline", "Arial Black", sans-serif;
   --nav-h: clamp(52px, 3.65vw, 76px);
   --ease-carriage: cubic-bezier(.65, 0, .25, 1);
   color-scheme: dark;
+}
+
+/* ---------- lines: five palettes the visitor can switch between ----------
+   Cyber Neon is the default above. Each line also recolours the window video (in script)
+   and swaps in a re-graded train interior. */
+:root[data-line="mono"] {
+  --carriage: #0a0a0a; --carriage-2: #161616; --carriage-glass: rgba(10, 10, 10, 0.92);
+  --signal: #b8b8b8; --signal-lit: #ffffff; --ink: #0a0a0a; --sky: #ededed;
+  --text: #ededed; --muted: rgba(237, 237, 237, 0.6); --rule: rgba(255, 255, 255, 0.14);
+  --mist: 232, 232, 232; --accent: #ededed; --on-accent: #0a0a0a;
+}
+:root[data-line="acid"] {
+  --carriage: #0b0518; --carriage-2: #160c2a; --carriage-glass: rgba(11, 5, 24, 0.92);
+  --signal: #9fe02a; --signal-lit: #ccff52; --ink: #3a0fb0; --sky: #c8fa48;
+  --text: #efe9ff; --muted: rgba(239, 233, 255, 0.62); --rule: rgba(200, 250, 72, 0.16);
+  --mist: 226, 246, 196; --accent: #c8fa48; --on-accent: #3a0fb0;
+}
+:root[data-line="solar"] {
+  --carriage: #060d18; --carriage-2: #0e1a2b; --carriage-glass: rgba(6, 13, 24, 0.92);
+  --signal: #f0a21c; --signal-lit: #ffc552; --ink: #4a22c9; --sky: #ffc04a;
+  --text: #fff1dc; --muted: rgba(255, 241, 220, 0.62); --rule: rgba(255, 192, 74, 0.18);
+  --mist: 255, 234, 196; --accent: #ffc04a; --on-accent: #4a22c9;
+}
+:root[data-line="blueprint"] {
+  --carriage: #04101f; --carriage-2: #0a1d36; --carriage-glass: rgba(4, 16, 31, 0.92);
+  --signal: #5cc8f0; --signal-lit: #b2eeff; --ink: #ffffff; --sky: #0d3570;
+  --text: #e6f6ff; --muted: rgba(230, 246, 255, 0.62); --rule: rgba(168, 236, 255, 0.18);
+  --mist: 128, 176, 222; --accent: #a8ecff; --on-accent: #0d3570;
 }
 
 html, body { height: 100%; }
@@ -135,9 +165,44 @@ body[data-page] .sway { animation-play-state: paused; }
   transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
   transition: transform 1.2s cubic-bezier(.2,.7,.2,1);
 }
-.outside video, .outside .poster {
+.outside video, .outside .poster, .outside .view {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
 }
+/* On every line but Cyber Neon the video is recoloured on the graphics chip into .view */
+.outside .view { visibility: hidden; }
+.recolor .outside .view { visibility: visible; }
+.recolor .outside video, .recolor .outside .poster { opacity: 0; }
+
+/* ---------- line switcher (bottom left of the window scene) ---------- */
+.lines {
+  position: fixed; z-index: 4;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: grid; justify-items: start; gap: 8px;
+  font-family: var(--display); transition: opacity .4s ease;
+}
+body[data-page] .lines { opacity: 0; visibility: hidden; }
+.lines-toggle, .line-opt {
+  appearance: none; border: 0; cursor: pointer; font: inherit; text-align: left;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--carriage-glass); color: var(--text);
+  border-radius: 999px; padding: 8px 14px 8px 10px;
+  box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(0,0,0,.35);
+  transition: background .2s ease, box-shadow .2s ease;
+}
+.lines-toggle:hover, .line-opt:hover { box-shadow: 0 0 0 1px var(--signal), 0 8px 24px rgba(0,0,0,.35); }
+.lines-toggle:focus-visible, .line-opt:focus-visible { outline: 2px solid var(--signal-lit); outline-offset: 3px; }
+.lines-toggle small { color: var(--muted); font-size: 12px; font-weight: 400; }
+.lines-toggle strong, .line-opt span { font-size: 14px; font-weight: 500; white-space: nowrap; }
+.chip { width: 26px; height: 16px; border-radius: 4px; flex: none; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.chip::before, .chip::after { content: ""; position: absolute; inset: 0; }
+.chip::before { background: var(--c1); clip-path: polygon(0 0, 100% 0, 100% 45%, 0 70%); }
+.chip::after { background: var(--c2); clip-path: polygon(0 70%, 100% 45%, 100% 100%, 0 100%); }
+.lines-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lines-list[hidden] { display: none; }
+.line-opt[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--signal-lit), 0 8px 24px rgba(0,0,0,.35); }
+.line-opt[aria-pressed="true"]::after { content: "Now"; margin-left: 6px; font-size: 11px; color: var(--signal-lit); }
+@media (max-width: 620px) { .lines-toggle small { display: none; } }
 
 /* ---------- title, set from the reference ----------
    Dirtyline: ascent .75em, cap height .70em → line box top = baseline − .75em
@@ -214,7 +279,7 @@ body[data-page] .sway { animation-play-state: paused; }
   transition: color .25s ease, text-shadow .25s ease;
   translate: 0 0.22em;
 }
-.nav a:hover, .nav a:focus-visible { color: var(--signal-lit); text-shadow: 0 0 18px rgba(79,208,129,.35); }
+.nav a:hover, .nav a:focus-visible { color: var(--signal-lit); text-shadow: 0 0 18px color-mix(in srgb, var(--signal-lit) 35%, transparent); }
 .nav a[aria-current="page"] { color: var(--signal-lit); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.3em; }
 .nav a:focus-visible { outline: 1px solid var(--signal-lit); outline-offset: 4px; }
 
@@ -222,8 +287,9 @@ body[data-page] .sway { animation-play-state: paused; }
   position: fixed; z-index: 4; margin: 0;
   right: max(16px, env(safe-area-inset-right, 0px));
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  color: rgba(236,226,238,.5);
+  color: color-mix(in srgb, var(--text) 50%, transparent);
   font-weight: 300; font-size: 13px; letter-spacing: .01em;
+  max-width: calc(100vw - 210px); text-align: right; text-wrap: balance;   /* clear of the line switcher */
   transition: opacity 1s ease;
 }
 .hint.gone, body[data-page] .hint { opacity: 0; }
@@ -276,7 +342,7 @@ body[data-page] .sway { animation-play-state: paused; }
   margin: 0;
   font-family: var(--title); font-weight: 400;
   font-size: clamp(64px, 12vw, 176px); line-height: .82; letter-spacing: -0.02em;
-  color: var(--sky);
+  color: var(--accent);
 }
 .page-head p { margin: 0; max-width: 38ch; color: var(--muted); font-size: clamp(15px, 1.3vw, 18px); line-height: 1.5; font-weight: 300; }
 .head-side { display: grid; gap: 14px; justify-items: end; }
@@ -287,20 +353,20 @@ body[data-page] .sway { animation-play-state: paused; }
   left: max(16px, env(safe-area-inset-left, 0px));
   width: 52px; height: 52px; border-radius: 50%;
   display: grid; place-items: center;
-  background: var(--sky); color: var(--ink);
+  background: var(--accent); color: var(--on-accent);
   box-shadow: 0 6px 20px rgba(0,0,0,.45);
   opacity: 0; visibility: hidden; transform: translateX(-14px);
   transition: opacity .35s ease, transform .45s var(--ease-carriage), visibility 0s linear .45s;
 }
 body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; transition: opacity .35s ease .35s, transform .45s var(--ease-carriage) .35s, visibility 0s; }
 .float-back:hover { transform: scale(1.06); }
-.float-back:focus-visible { outline: 2px solid var(--sky); outline-offset: 4px; }
+.float-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .float-back svg { width: 22px; height: 22px; }
 @media (max-width: 1340px) {
   .page-inner { padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + clamp(36px, 6vw, 88px) + 52px); }
 }
 .page-head p a { color: var(--text); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .25em; }
-.page-head p a:hover, .page-head p a:focus-visible { color: var(--sky); }
+.page-head p a:hover, .page-head p a:focus-visible { color: var(--accent); }
 .back {
   color: var(--signal); text-decoration: none; font-size: 15px; font-weight: 400;
   padding: 6px 0; transition: color .2s ease;
@@ -429,7 +495,7 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 }
 .contact .mail-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
 .contact .mail {
-  font-size: clamp(22px, 3.6vw, 48px); font-weight: 400; letter-spacing: -0.02em; color: var(--sky);
+  font-size: clamp(22px, 3.6vw, 48px); font-weight: 400; letter-spacing: -0.02em; color: var(--accent);
   overflow-wrap: anywhere; user-select: all;
 }
 .btn {
@@ -437,11 +503,11 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   font: 500 14px/1 var(--display); padding: 11px 16px; border-radius: 999px; cursor: pointer;
   transition: background .2s ease, color .2s ease;
 }
-.btn:hover { background: rgba(79, 208, 129, .12); }
+.btn:hover { background: color-mix(in srgb, var(--signal-lit) 12%, transparent); }
 .btn:focus-visible { outline: 2px solid var(--signal-lit); outline-offset: 3px; }
 .links { display: flex; flex-wrap: wrap; gap: 10px 28px; }
 .links a { color: var(--text); font-size: 17px; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: .3em; }
-.links a:hover, .links a:focus-visible { text-decoration-color: var(--sky); color: var(--sky); }
+.links a:hover, .links a:focus-visible { text-decoration-color: var(--accent); color: var(--accent); }
 .links span { color: var(--muted); font-size: 17px; }
 
 /* ---------- Work: an index of projects, each opening its Behance case study ---------- */
@@ -457,15 +523,15 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   border-radius: 6px;
   transition: background .25s ease;
 }
-.work-row:hover, .work-row:focus-visible { background: rgba(243, 193, 234, .06); }
-.work-row:focus-visible { outline: 1px solid var(--sky); outline-offset: -1px; }
+.work-row:hover, .work-row:focus-visible { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.work-row:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
 .work-row h3 {
   margin: 0; font-family: var(--title); font-weight: 400;
   font-size: clamp(26px, 3vw, 42px); line-height: 1; letter-spacing: -0.015em;
   text-transform: lowercase;      /* Dirtyline sets lowercase as clean capitals; uppercase input switches to its blackletter */
   color: var(--text); transition: color .25s ease;
 }
-.work-row:hover h3, .work-row:focus-visible h3 { color: var(--sky); }
+.work-row:hover h3, .work-row:focus-visible h3 { color: var(--accent); }
 .work-row h3 .num { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; }   /* Dirtyline only has blackletter figures */
 .work-row .desc { margin: 8px 0 0; color: var(--muted); font-size: 15.5px; line-height: 1.5; font-weight: 300; max-width: 52ch; }
 .work-row .meta { color: var(--muted); font-size: 15px; }
@@ -502,15 +568,15 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 }
 .piece.dragging { cursor: grabbing; transition: box-shadow .25s ease; box-shadow: 0 2px 4px rgba(0,0,0,.4), 0 28px 60px rgba(0,0,0,.55); }
 .piece:hover { box-shadow: 0 2px 4px rgba(0,0,0,.4), 0 18px 40px rgba(0,0,0,.45); }
-.piece:focus-visible { box-shadow: 0 0 0 2px var(--carriage), 0 0 0 4px var(--sky); }
+.piece:focus-visible { box-shadow: 0 0 0 2px var(--carriage), 0 0 0 4px var(--accent); }
 .piece img, .piece video { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
 .piece.empty {
   background: transparent; box-shadow: none;
-  border: 1px dashed rgba(243, 193, 234, .32);
+  border: 1px dashed color-mix(in srgb, var(--accent) 32%, transparent);
   display: grid; place-items: center; text-align: center;
 }
-.piece.empty span { color: rgba(243, 193, 234, .5); font-size: 12px; padding: 8px; }
-.piece.empty:hover, .piece.empty:focus-visible { border-color: var(--sky); }
+.piece.empty span { color: color-mix(in srgb, var(--accent) 50%, transparent); font-size: 12px; padding: 8px; }
+.piece.empty:hover, .piece.empty:focus-visible { border-color: var(--accent); }
 
 dialog.viewer {
   border: 0; padding: 0; background: transparent; color: var(--text);
@@ -522,7 +588,7 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
 .viewer img, .viewer video { display: block; max-width: 100%; max-height: 74vh; height: auto; }
 .viewer .blank {
   width: min(70vw, 520px); aspect-ratio: 4 / 3; display: grid; place-items: center; text-align: center; padding: 24px;
-  border: 1px dashed rgba(243, 193, 234, .4); color: var(--muted); font-size: 16px; line-height: 1.5;
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); color: var(--muted); font-size: 16px; line-height: 1.5;
 }
 .viewer figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; align-items: baseline; }
 .viewer figcaption strong { font-weight: 500; font-size: 18px; }
@@ -563,6 +629,7 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
         <div class="outside-inner" id="outsideInner">
           <img class="poster" src="assets/poster.webp" alt="">
           <video id="vid" src="assets/window.mp4" poster="assets/poster.webp" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+          <canvas class="view" id="view" aria-hidden="true"></canvas>
         </div>
         <h1 class="title" id="title" aria-label="Artist/Observer, Portfolio 1.5">
           <span class="t-line t-kicker" data-font="title">artist/observer<i class="bm"></i></span>
@@ -591,6 +658,19 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
 <a class="float-back" href="#" aria-label="Back to the window">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
 </a>
+
+<div class="lines" id="lines">
+  <ul class="lines-list" id="linesList" hidden aria-label="Colour lines">
+    <li><button class="line-opt" type="button" data-line="mono" style="--c1:#ededed;--c2:#141414"><i class="chip"></i><span>Classic</span></button></li>
+    <li><button class="line-opt" type="button" data-line="neon" style="--c1:#f3c1ea;--c2:#1a8a3e"><i class="chip"></i><span>Cyber Neon</span></button></li>
+    <li><button class="line-opt" type="button" data-line="acid" style="--c1:#c8fa48;--c2:#5a1fd0"><i class="chip"></i><span>Acid Thermal</span></button></li>
+    <li><button class="line-opt" type="button" data-line="solar" style="--c1:#ffc04a;--c2:#17507f"><i class="chip"></i><span>Solar Amber</span></button></li>
+    <li><button class="line-opt" type="button" data-line="blueprint" style="--c1:#0d3570;--c2:#9fe6ff"><i class="chip"></i><span>Cyan Blueprint</span></button></li>
+  </ul>
+  <button class="lines-toggle" id="linesToggle" type="button" aria-expanded="false" aria-controls="linesList">
+    <i class="chip" id="linesChip"></i><small>Line</small><strong id="linesName">Cyber Neon</strong>
+  </button>
+</div>
 
 <p class="hint" id="hint">Move across the glass to clear the mist</p>
 
@@ -783,8 +863,108 @@ const MUSEUM = window.MUSEUM || [];
   if (coarse) hint.textContent = 'Swipe across the glass to clear the mist';
 
   let pageOpen = false;
+  /* colours the mist canvas paints with; refreshed whenever the line changes */
+  let tint = '238,222,236', ink = '#094ae6', skyCol = '#f3c1ea';
+  const readLineColours = () => {
+    const cs = getComputedStyle(document.documentElement);
+    tint = cs.getPropertyValue('--mist').trim() || tint;
+    ink = cs.getPropertyValue('--ink').trim() || ink;
+    skyCol = cs.getPropertyValue('--sky').trim() || skyCol;
+  };
+  readLineColours();
   const play = () => { if (!pageOpen) vid.play().catch(() => {}); };
   play(); document.addEventListener('pointerdown', play, { once: true });
+
+  /* ======================================================================
+     Lines: palette switching. The window video is recoloured live by a tiny WebGL shader
+     (brightness → the line's colour ramp), so all five lines share one video file.
+     ====================================================================== */
+  const LINES = {
+    mono:      { name: 'Classic',        ramp: [[0,'#0c0c0c'],[0.30,'#141414'],[0.45,'#2a2a2a'],[0.62,'#cfcfcf'],[0.80,'#eeeeee'],[1,'#ffffff']] },
+    neon:      { name: 'Cyber Neon',     ramp: null },
+    acid:      { name: 'Acid Thermal',   ramp: [[0,'#14052e'],[0.30,'#5a1fd0'],[0.45,'#7b3cff'],[0.62,'#b4f53a'],[0.80,'#d4ff5c'],[1,'#f4ffd0']] },
+    solar:     { name: 'Solar Amber',    ramp: [[0,'#06192b'],[0.30,'#17507f'],[0.45,'#2a73a8'],[0.62,'#ffb43a'],[0.80,'#ffcb5c'],[1,'#fff1c9']] },
+    blueprint: { name: 'Cyan Blueprint', ramp: [[0,'#e6f9ff'],[0.30,'#9fe6ff'],[0.45,'#5cc8f0'],[0.62,'#123f7d'],[0.80,'#0d3570'],[1,'#081f45']] },
+  };
+  const recolor = { canvas: document.getElementById('view'), gl: null, active: false, rampTex: null, vidTex: null, loc: null };
+  (() => {
+    const c = recolor.canvas;
+    const gl = c.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: true, premultipliedAlpha: false });
+    if (!gl) return;
+    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }'));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, 'precision mediump float; varying vec2 uv; uniform sampler2D v; uniform sampler2D ramp; void main(){ vec3 c = texture2D(v, vec2(uv.x, 1.0 - uv.y)).rgb; float y = dot(c, vec3(0.2126, 0.7152, 0.0722)); gl_FragColor = vec4(texture2D(ramp, vec2(y, 0.5)).rgb, 1.0); }'));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const tex = (unit) => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+      [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));
+      [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.LINEAR)); return t; };
+    recolor.vidTex = tex(0); recolor.rampTex = tex(1);
+    gl.uniform1i(gl.getUniformLocation(prog, 'v'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'ramp'), 1);
+    recolor.gl = gl;
+  })();
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const setRamp = stops => {
+    const gl = recolor.gl, px = new Uint8Array(256 * 4);
+    for (let i = 0; i < 256; i++) {
+      const t = i / 255; let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
+      const [a, ca] = stops[k], [b, cb] = stops[k + 1], f = Math.min(1, Math.max(0, (t - a) / (b - a)));
+      const A = hex(ca), Bc = hex(cb);
+      for (let ch = 0; ch < 3; ch++) px[i * 4 + ch] = Math.round(A[ch] + (Bc[ch] - A[ch]) * f);
+      px[i * 4 + 3] = 255;
+    }
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, recolor.rampTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  };
+  const drawRecolor = () => {
+    const gl = recolor.gl;
+    if (!gl || !recolor.active || pageOpen || vid.readyState < 2) return;
+    const c = recolor.canvas;
+    if (c.width !== vid.videoWidth) { c.width = vid.videoWidth; c.height = vid.videoHeight; gl.viewport(0, 0, c.width, c.height); }
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, recolor.vidTex);
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, vid); }
+    catch (e) { recolor.gl = null; recolor.active = false; document.body.classList.remove('recolor'); return; }   // fall back to the plain video
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  };
+  if ('requestVideoFrameCallback' in vid) {
+    const onFrame = () => { drawRecolor(); vid.requestVideoFrameCallback(onFrame); };
+    vid.requestVideoFrameCallback(onFrame);
+  } else {
+    const loop = () => { drawRecolor(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  }
+
+  const interiorImg = document.querySelector('.interior');
+  const interiorSrc = document.querySelector('picture source');
+  const linesList = document.getElementById('linesList'), linesToggle = document.getElementById('linesToggle');
+  const setLine = (id, save) => {
+    if (!LINES[id]) id = 'neon';
+    const L = LINES[id];
+    if (id === 'neon') document.documentElement.removeAttribute('data-line');
+    else document.documentElement.setAttribute('data-line', id);
+    recolor.active = !!(L.ramp && recolor.gl);
+    if (recolor.active) { setRamp(L.ramp); drawRecolor(); }
+    document.body.classList.toggle('recolor', recolor.active);
+    interiorImg.src = id === 'neon' ? 'assets/interior.webp' : `assets/lines/interior-desk-${id}.webp`;
+    interiorSrc.srcset = id === 'neon' ? 'assets/interior-mobile.webp' : `assets/lines/interior-mob-${id}.webp`;
+    document.getElementById('linesName').textContent = L.name;
+    const cur = document.querySelector(`.line-opt[data-line="${id}"]`);
+    document.getElementById('linesChip').setAttribute('style', cur.getAttribute('style'));
+    document.querySelectorAll('.line-opt').forEach(b => b.setAttribute('aria-pressed', b === cur ? 'true' : 'false'));
+    readLineColours();
+    if (save) { try { localStorage.setItem('line', id); } catch (e) {} }
+  };
+  const openLines = open => { linesList.hidden = !open; linesToggle.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+  linesToggle.addEventListener('click', () => openLines(linesList.hidden));
+  document.querySelectorAll('.line-opt').forEach(b => b.addEventListener('click', () => { setLine(b.dataset.line, true); openLines(false); linesToggle.focus(); }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !linesList.hidden) { openLines(false); linesToggle.focus(); } });
+  document.addEventListener('pointerdown', e => { if (!linesList.hidden && !e.target.closest('.lines')) openLines(false); });
+  let savedLine = 'neon'; try { savedLine = localStorage.getItem('line') || 'neon'; } catch (e) {}
+  setLine(savedLine, false);
 
   /* ---- looking through the window: the scenery shifts against the cursor ---- */
   if (!reduce) {
@@ -830,8 +1010,6 @@ const MUSEUM = window.MUSEUM || [];
   const SCALE = 0.22;
   const mist = document.getElementById('mist'), mctx = mist.getContext('2d');
   const wipe = document.createElement('canvas'), wctx = wipe.getContext('2d');
-  const tint = getComputedStyle(document.documentElement).getPropertyValue('--mist').trim() || '238,222,236';
-  const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#094ae6';
   let pw = 0, ph = 0, inside = false, last = null, wipedOnce = false;
   let lines = [];
 
@@ -853,7 +1031,7 @@ const MUSEUM = window.MUSEUM || [];
   };
 
   const drawCover = (ctx, media, W, H, ox, oy, s) => {
-    const iw = media.videoWidth || media.naturalWidth, ih = media.videoHeight || media.naturalHeight;
+    const iw = media.videoWidth || media.naturalWidth || media.width, ih = media.videoHeight || media.naturalHeight || media.height;
     if (!iw) return;
     const k = Math.max(W / iw, H / ih), dw = iw * k, dh = ih * k;
     ctx.drawImage(media, (ox + (W - dw) / 2) * s, (oy + (H - dh) / 2) * s, dw * s, dh * s);
@@ -864,9 +1042,9 @@ const MUSEUM = window.MUSEUM || [];
     if (pageOpen) return;
     const W = mist.width, H = mist.height;
     mctx.globalCompositeOperation = 'source-over';
-    mctx.fillStyle = getComputedStyle(outside).backgroundColor; mctx.fillRect(0, 0, W, H);
+    mctx.fillStyle = skyCol; mctx.fillRect(0, 0, W, H);
     const ir = inner.getBoundingClientRect(), r = outside.getBoundingClientRect();
-    if (vid.readyState >= 2) drawCover(mctx, vid, ir.width, ir.height, ir.left - r.left, ir.top - r.top, SCALE);
+    if (vid.readyState >= 2) drawCover(mctx, recolor.active ? recolor.canvas : vid, ir.width, ir.height, ir.left - r.left, ir.top - r.top, SCALE);
     mctx.fillStyle = ink;
     for (const l of lines) { mctx.font = l.font; if ('letterSpacing' in mctx) mctx.letterSpacing = l.ls + 'px'; mctx.fillText(l.text, l.x * SCALE, l.y * SCALE); }
     if ('letterSpacing' in mctx) mctx.letterSpacing = '0px';
