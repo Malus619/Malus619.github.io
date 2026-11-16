@@ -440,12 +440,15 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   body.door-open .leaf { transform: translateX(-101%); }
   .outside { transition: left 1s cubic-bezier(.65,0,.3,1), top 1s cubic-bezier(.65,0,.3,1), width 1s cubic-bezier(.65,0,.3,1), height 1s cubic-bezier(.65,0,.3,1); }
   body.door-open .outside { left: 21.041%; top: 19.617%; width: 56.004%; height: 66.806%; }
-  .outside .title, .outside .mist { transition: opacity .35s ease; }
-  body.door-open .outside .title, body.door-open .outside .mist { opacity: 0; }
+  .outside .mist { transition: opacity .35s ease; }
+  body.door-open .outside .mist { opacity: 0; }
+  /* the title is pinned to where the glass was, so it stays put while the pane opens out to the doorway */
+  .outside .title { inset: auto; left: 0; top: 0; width: 36.663cqw; height: 61.318cqw; transition: left 1s cubic-bezier(.65,0,.3,1), top 1s cubic-bezier(.65,0,.3,1); }
+  body.door-open .outside .title { left: 14.347cqw; top: 9.989cqw; }
   .pax { display: block; position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 5; will-change: transform; pointer-events: none; }
   .pax.out { z-index: 2; }
   .pax-bob { position: absolute; left: 0; top: 0; }
-  body.flown .pax-bob { animation: bob 3.6s ease-in-out infinite; }
+  body.flown .pax-bob { animation: wander 17s ease-in-out infinite; }
   .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; transition: opacity .3s ease; user-select: none; -webkit-user-drag: none; }
   .pose.on { opacity: 1; }
   .pose.final {
@@ -463,7 +466,14 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   .door-cue i::after { content: ""; position: absolute; inset: -1.5px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.85); animation: knock-ripple 2.6s cubic-bezier(.2,.7,.3,1) infinite; }
   .door-cue span { font: 400 max(10px, 2.6cqw)/1 var(--display); letter-spacing: .06em; color: rgba(255,255,255,.9); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
 }
-@keyframes bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.6cqw) rotate(-.8deg); } }
+/* drifting about out there: offsets are in his own (scaled) frame */
+@keyframes wander {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  18% { transform: translate(-10cqw, -7cqw) rotate(-5deg) scale(.96); }
+  37% { transform: translate(6cqw, -15cqw) rotate(3deg) scale(.9); }
+  58% { transform: translate(13cqw, 3cqw) rotate(6deg) scale(1.03); }
+  79% { transform: translate(-7cqw, 11cqw) rotate(-3deg) scale(.97); }
+}
 @media (prefers-reduced-motion: reduce) { body.flown .pax-bob { animation: none; } }
 
 /* ---------- About ---------- */
@@ -1897,17 +1907,16 @@ const MUSEUM = window.MUSEUM || [];
   const poses = {}; pax.querySelectorAll('[data-pose]').forEach(el => { poses[el.dataset.pose] = el; });
   const R = 100 / 941;                     // artwork px → cqw
   const POSE = {                            // each still, in artwork px around the body point at scale 1
-    p1:    { x: -88.1,  y: -314.7, w: 176.2 },
-    p3:    { x: -203.7, y: -272,   w: 307.5 },
-    p4:    { x: -193.7, y: -254.7, w: 338.5 },
-    final: { x: -346.8, y: -432.4, w: 693.5 },
+    p1:    { x: -157.5, y: -562.5, w: 315 },     // standing against the wall, as on the old phone image
+    p3:    { x: -367.3, y: -475.5, w: 549.7 },   // up on his toes, shoes still on the floor
+    p4:    { x: -350,   y: -445,   w: 605 },
+    final: { x: -437,   y: -545,   w: 874 },
   };
   Object.entries(POSE).forEach(([k, g]) => { const s = poses[k].style; s.left = g.x * R + 'cqw'; s.top = g.y * R + 'cqw'; s.width = g.w * R + 'cqw'; });
   const AT = {                              // where the body point sits, and how big he is
-    seat: [88.7, 747, 1],
-    lift: [98, 724, 1],
-    sill: [440, 860, .78],
-    out:  [462, 842, .62],
+    seat: [149.5, 954.7, 1],
+    sill: [461.5, 905, 1],     // same size all the way to the doorway
+    out:  [461.5, 880, .6],    // a little smaller once he is outside, then he drifts about
   };
   const tf = ([x, y, k]) => `translate(${x * R}cqw, ${y * R}cqw) scale(${k})`;
   pax.style.transform = tf(AT.seat);
@@ -1929,23 +1938,26 @@ const MUSEUM = window.MUSEUM || [];
   const openDoor = async () => {
     doorBusy = true; loadDoor(); doorCue.classList.remove('show');
     doorOpen = true; document.body.classList.add('door-open'); hint.classList.add('gone');
-    await wait(350);
-    showPose('p3'); await move(AT.seat, AT.lift, 650, 'cubic-bezier(.2,.7,.3,1)');
-    showPose('p4'); await move(AT.lift, AT.sill, 950, 'cubic-bezier(.45,0,.35,1)');
+    await wait(300);
+    showPose('p3'); await wait(650);
+    showPose('p4'); await move(AT.seat, AT.sill, 1150, 'cubic-bezier(.45,0,.35,1)');
     pax.classList.add('out');
-    const last = move(AT.sill, AT.out, 750, 'cubic-bezier(.2,.7,.3,1)');
-    await wait(200); showPose('final'); await last;
+    const last = move(AT.sill, AT.out, 950, 'cubic-bezier(.2,.7,.3,1)');
+    await wait(250); showPose('final'); await last;
     document.body.classList.add('flown'); doorBusy = false;
   };
   const closeDoor = async () => {
-    doorBusy = true; document.body.classList.remove('flown');
-    showPose('p3'); await move(AT.out, AT.sill, 650, 'cubic-bezier(.45,0,.35,1)');
+    doorBusy = true;
+    const bob = pax.firstElementChild, drift = getComputedStyle(bob).transform;   // ease out of the drift, no jump
+    document.body.classList.remove('flown');
+    if (drift && drift !== 'none') await new Promise(r => { const a = bob.animate([{ transform: drift }, { transform: 'none' }], { duration: reduce ? 1 : 600, easing: 'ease-in-out' }); a.onfinish = r; });
+    showPose('p3'); await move(AT.out, AT.sill, 750, 'cubic-bezier(.45,0,.35,1)');
     pax.classList.remove('out');
-    const back = move(AT.sill, AT.lift, 900, 'cubic-bezier(.45,0,.35,1)');
-    await wait(450); document.body.classList.remove('door-open');
+    const back = move(AT.sill, AT.seat, 1100, 'cubic-bezier(.45,0,.35,1)');
+    await wait(500); document.body.classList.remove('door-open');
     await back;
-    showPose('p1'); await move(AT.lift, AT.seat, 450, 'cubic-bezier(.3,0,.3,1)');
-    await wait(600);
+    showPose('p1');
+    await wait(700);
     doorOpen = false; measure(); doorBusy = false;
   };
   let tapStart = null;
