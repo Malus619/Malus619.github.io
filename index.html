@@ -623,6 +623,34 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 .piece.empty span { color: color-mix(in srgb, var(--accent) 50%, transparent); font-size: 12px; padding: 8px; }
 .piece.empty:hover, .piece.empty:focus-visible { border-color: var(--accent); }
 
+/* ---------- Museum: wildlife wall, justified rows that keep every frame's own shape ---------- */
+.wild { display: grid; gap: clamp(20px, 3vw, 32px); padding-top: clamp(36px, 5vw, 72px); border-top: 1px solid var(--rule); }
+.wild-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; }
+.wild-head h3 { margin: 0; font-family: var(--title); font-weight: 400; font-size: clamp(44px, 7vw, 104px); line-height: .85; letter-spacing: -0.01em; color: var(--accent); text-transform: lowercase; }
+.wild-head p { margin: 0; max-width: 42ch; color: var(--muted); font-size: clamp(14.5px, 1.2vw, 17px); line-height: 1.5; font-weight: 300; }
+.wall { position: relative; width: 100%; }
+.shot {
+  position: absolute; left: 0; top: 0; overflow: hidden; padding: 0; border: 0; margin: 0;
+  background: color-mix(in srgb, var(--text) 6%, transparent); cursor: zoom-in;
+}
+.shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .9s cubic-bezier(.2,.8,.2,1), filter .4s ease; }
+.shot figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 28px 12px 10px; color: #fff; font-size: 13px; line-height: 1.3; text-align: left;
+  background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
+  opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease;
+}
+.shot figcaption span { opacity: .7; font-size: 11.5px; letter-spacing: .02em; white-space: nowrap; }
+.shot:hover img, .shot:focus-visible img { transform: scale(1.035); }
+.shot:hover figcaption, .shot:focus-visible figcaption { opacity: 1; transform: none; }
+.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (pointer: coarse) { .shot figcaption { display: none; } }
+.viewer .step { position: fixed; top: 50%; translate: 0 -50%; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 20px; }
+.viewer .step.prev { left: max(12px, env(safe-area-inset-left, 0px)); }
+.viewer .step.next { right: max(12px, env(safe-area-inset-right, 0px)); }
+@media (max-width: 700px) { .viewer .step { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: none; } }
+
 dialog.viewer {
   border: 0; padding: 0; background: transparent; color: var(--text);
   max-width: min(92vw, 1100px); width: 100%;
@@ -885,11 +913,20 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
       </div>
       <div class="cluster" id="cluster"></div>
     </div>
+    <section class="wild" aria-labelledby="wild-h">
+      <div class="wild-head">
+        <h3 id="wild-h">Wildlife</h3>
+        <p>Birds and animals, watched quietly through a long lens. Open a frame to see it large, then use the arrows to move along.</p>
+      </div>
+      <div class="wall" id="wall"></div>
+    </section>
   </div>
 </section>
 
 <dialog class="viewer" id="viewer" aria-label="Work viewer">
   <button class="btn close" id="viewerClose" type="button">Close</button>
+  <button class="btn step prev" id="viewerPrev" type="button" aria-label="Previous photo" hidden>&larr;</button>
+  <button class="btn step next" id="viewerNext" type="button" aria-label="Next photo" hidden>&rarr;</button>
   <figure>
     <div class="frame" id="viewerFrame"></div>
     <figcaption><strong id="viewerTitle"></strong><span id="viewerMeta"></span></figcaption>
@@ -898,6 +935,7 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
 
 <script src="content/work.js"></script>
 <script src="content/museum.js"></script>
+<script src="content/wildlife.js"></script>
 <script>
 /* Work and Museum entries live in content/work.js and content/museum.js. */
 const PROJECTS = window.PROJECTS || [];
@@ -1186,7 +1224,7 @@ const MUSEUM = window.MUSEUM || [];
       void nextEl.offsetWidth;
       nextEl.classList.add('open');
       nextEl.scrollTop = 0;
-      if (next === 'museum') requestAnimationFrame(layoutCluster);
+      if (next === 'museum') requestAnimationFrame(() => { layoutCluster(); layoutWall(); });
     }
     current = next;
     pageOpen = !!next;
@@ -1325,9 +1363,78 @@ const MUSEUM = window.MUSEUM || [];
       document.getElementById('viewerTitle').textContent = m.title;
       document.getElementById('viewerMeta').textContent = m.meta || '';
     }
-    viewer.showModal();
+    stepping = null; viewerPrev.hidden = viewerNext.hidden = true;
+    if (!viewer.open) viewer.showModal();
   };
   document.getElementById('viewerClose').addEventListener('click', () => viewer.close());
+
+  /* ---- Museum: wildlife wall (justified rows) ---- */
+  const WILD = window.WILDLIFE || [];
+  const wall = document.getElementById('wall');
+  const viewerPrev = document.getElementById('viewerPrev'), viewerNext = document.getElementById('viewerNext');
+  let stepping = null;
+  const showShot = (i) => {
+    const n = WILD.length; i = (i + n) % n;
+    const m = WILD[i], frame = document.getElementById('viewerFrame');
+    frame.className = 'frame'; frame.innerHTML = '';
+    const img = new Image(); img.src = m.src; img.alt = m.title; frame.appendChild(img);
+    document.getElementById('viewerTitle').textContent = m.title;
+    document.getElementById('viewerMeta').textContent = `${m.frame ? m.frame + ', ' : ''}${i + 1} of ${n}`;
+    stepping = i; viewerPrev.hidden = viewerNext.hidden = n < 2;
+    if (!viewer.open) viewer.showModal();
+    [i - 1, i + 1].forEach(k => { const pre = new Image(); pre.src = WILD[(k + n) % n].src; });
+  };
+  viewerPrev.addEventListener('click', () => showShot(stepping - 1));
+  viewerNext.addEventListener('click', () => showShot(stepping + 1));
+  viewer.addEventListener('keydown', e => {
+    if (stepping === null) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); showShot(stepping - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); showShot(stepping + 1); }
+  });
+  let swipeX = null;
+  viewer.addEventListener('pointerdown', e => { swipeX = e.clientX; });
+  viewer.addEventListener('pointerup', e => {
+    if (stepping === null || swipeX === null) return;
+    const dx = e.clientX - swipeX; swipeX = null;
+    if (Math.abs(dx) > 50) showShot(stepping + (dx < 0 ? 1 : -1));
+  });
+  const shots = WILD.map((m, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'shot'; b.setAttribute('aria-label', `Open ${m.title}`);
+    const img = new Image(); img.src = m.thumb || m.src; img.alt = m.title; img.loading = 'lazy'; img.decoding = 'async';
+    const cap = document.createElement('figcaption');
+    cap.innerHTML = '<strong></strong><span></span>';
+    cap.firstChild.textContent = m.title; cap.lastChild.textContent = m.frame || '';
+    b.append(img, cap); b.addEventListener('click', () => showShot(i));
+    wall.appendChild(b);
+    return b;
+  });
+  function layoutWall() {
+    const W = wall.clientWidth; if (!W || !shots.length) return;
+    const gap = W < 600 ? 6 : 10, target = W < 600 ? 150 : W < 1000 ? 210 : 270;
+    let y = 0, row = [];
+    const flush = (last) => {
+      const ratios = row.map(i => WILD[i].w / WILD[i].h), sum = ratios.reduce((a, r) => a + r, 0);
+      let hRow = (W - gap * (row.length - 1)) / sum;
+      if (last && hRow > target * 1.25) hRow = target;
+      let x = 0;
+      row.forEach((i, k) => {
+        const w = ratios[k] * hRow, s = shots[i].style;
+        s.width = w + 'px'; s.height = hRow + 'px'; s.transform = `translate(${x}px, ${y}px)`;
+        x += w + gap;
+      });
+      y += hRow + gap; row = [];
+    };
+    WILD.forEach((m, i) => {
+      row.push(i);
+      const sum = row.reduce((a, k) => a + WILD[k].w / WILD[k].h, 0);
+      if ((W - gap * (row.length - 1)) / sum <= target) flush(false);
+    });
+    if (row.length) flush(true);
+    wall.style.height = Math.max(0, y - gap) + 'px';
+  }
+  layoutWall();
+  addEventListener('resize', layoutWall);
   viewer.addEventListener('close', () => { const v = viewer.querySelector('video'); if (v) v.pause(); });
   viewer.addEventListener('click', e => { if (e.target === viewer) viewer.close(); });
 
@@ -1547,7 +1654,7 @@ const MUSEUM = window.MUSEUM || [];
       const still = performance.now() - b[0] > 90;   // held still before letting go
       L.vx = still ? 0 : (b[1] - a[1]) / dt; L.vy = still ? 0 : (b[2] - a[2]) / dt;
       if (Math.hypot(L.vx, L.vy) < CALM) { L.vx = L.vy = L.va = 0; L.rest = true; }   // set down gently: it stays
-      else L.va = L.vx / 900;
+      else { L.va = L.vx / 900; L.thrown = true; }
       wakeL();
     };
     L.el.addEventListener('pointermove', move); L.el.addEventListener('pointerup', up); L.el.addEventListener('pointercancel', up);
@@ -1566,10 +1673,11 @@ const MUSEUM = window.MUSEUM || [];
         el.style.fontSize = (parseFloat(cs.fontSize) * titleScale) + 'px';
         layer.appendChild(el);
         const w = el.offsetWidth, h = el.offsetHeight;
-        const L = { el, w, h, x: b.left + b.width / 2 - w / 2, y: b.top + b.height / 2 - h / 2, a: 0, vx: 0, vy: 0, va: 0, held: false, rest: false };
+        const L = { el, w, h, x: b.left + b.width / 2 - w / 2, y: b.top + b.height / 2 - h / 2, a: 0, vx: 0, vy: 0, va: 0, held: false, rest: false, thrown: false };
         L.hx = L.x; L.hy = L.y;
-        const dx = L.x + w / 2 - bx, dy = L.y + h / 2 - by, d = Math.hypot(dx, dy) || 1, push = rnd(160, 380);
-        L.vx = dx / d * push; L.vy = dy / d * push - rnd(40, 160); L.va = rnd(-2.5, 2.5);
+        // no fall: each letter just eases away from its spot, weightless, and settles
+        const dx = L.x + w / 2 - bx, dy = L.y + h / 2 - by, d = Math.hypot(dx, dy) || 1, push = rnd(14, 34);
+        L.vx = dx / d * push + rnd(-6, 6); L.vy = dy / d * push + rnd(-6, 6); L.va = rnd(-.12, .12);
         placeL(L); letters.push(L);
         el.addEventListener('pointerdown', grab);
       }
@@ -1585,8 +1693,8 @@ const MUSEUM = window.MUSEUM || [];
       if (L.held) { awake = true; L.a += (0 - L.a) * Math.min(1, dt * 8); placeL(L); continue; }
       if (L.rest) continue;
       awake = true;
-      L.vy += GRAVITY * dt;
-      const f = Math.exp(-DRAG * dt); L.vx *= f; L.vy *= f; L.va *= Math.exp(-1.2 * dt);
+      if (L.thrown) L.vy += GRAVITY * dt;
+      const f = Math.exp(-(L.thrown ? DRAG : .22) * dt); L.vx *= f; L.vy *= f; L.va *= Math.exp(-1.2 * dt);
       L.x += L.vx * dt; L.y += L.vy * dt; L.a += L.va * dt;
       if (L.x < 0) { L.x = 0; L.vx = Math.abs(L.vx) * BOUNCE; L.va = -L.va * .8; }
       if (L.x + L.w > B.w) { L.x = B.w - L.w; L.vx = -Math.abs(L.vx) * BOUNCE; L.va = -L.va * .8; }
@@ -1597,6 +1705,7 @@ const MUSEUM = window.MUSEUM || [];
         L.vx *= Math.exp(-3 * dt); L.va *= Math.exp(-4 * dt);
         if (Math.abs(L.vx) < REST && L.vy === 0) { L.vx = 0; L.va = 0; L.rest = true; }
       }
+      if (!L.thrown && Math.hypot(L.vx, L.vy) < 1.2) { L.vx = L.vy = L.va = 0; L.rest = true; }
       placeL(L);
     }
     return awake;

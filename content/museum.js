@@ -16,4 +16,8 @@ window.MUSEUM = [
   { src: 'assets/museum/sketchbook-spread.webp', w: 1400, h: 1081, title: 'Sketchbook spread', meta: 'Ink and marker' },
   { video: 'assets/museum/cat-loop.mp4', src: 'assets/museum/cat-loop.webp', w: 550, h: 450, title: 'Cat cut-out loop', meta: 'Video, 10 s' },
   { video: 'assets/museum/reflex.mp4', src: 'assets/museum/reflex.webp', w: 960, h: 960, title: 'Reflex', meta: 'Video, 10 s' },
+  { video: 'assets/museum/lohar-poster.mp4', src: 'assets/museum/lohar-poster.webp', w: 1350, h: 900, title: 'Lohar', meta: 'Animated poster, 11 s' },
+  { video: 'assets/museum/lohar-type.mp4', src: 'assets/museum/lohar-type.webp', w: 1350, h: 900, title: 'Lohar, title type', meta: 'Video in type, 11 s' },
+  { video: 'assets/museum/embers.mp4', src: 'assets/museum/embers.webp', w: 1280, h: 720, title: 'Embers', meta: 'Video, 31 s' },
+  { video: 'assets/museum/jigsaw.mp4', src: 'assets/museum/jigsaw.webp', w: 1320, h: 960, title: 'Jig-saw Puzzle', meta: 'Animated poster, 18 s' },
 ];
