@@ -427,6 +427,45 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 
 .sec-title { margin: 0 0 20px; font-size: 15px; font-weight: 500; letter-spacing: .01em; color: var(--signal-lit); }
 
+/* ---------- phones: tap the carriage door, it slides open and he floats out ----------
+   Layers inside .sway, back to front: the outside (video), the door leaf in its doorway,
+   the carriage with the doorway cut out, and the passenger. Once he is past the frame he drops
+   behind it (.pax.out) so the doorway frames him. All positions are pixels of the 941×1672 artwork. */
+.sway > .outside { z-index: 1; }
+.interior { z-index: 4; }
+.doorway, .pax, .door-cue { display: none; }
+@media (max-aspect-ratio: 1 / 1) {
+  .doorway { display: block; position: absolute; z-index: 3; left: 21.041%; top: 19.617%; width: 56.004%; height: 66.806%; overflow: hidden; pointer-events: none; }
+  .leaf { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; transition: transform 1s cubic-bezier(.65,0,.3,1); }
+  body.door-open .leaf { transform: translateX(-101%); }
+  .outside { transition: left 1s cubic-bezier(.65,0,.3,1), top 1s cubic-bezier(.65,0,.3,1), width 1s cubic-bezier(.65,0,.3,1), height 1s cubic-bezier(.65,0,.3,1); }
+  body.door-open .outside { left: 21.041%; top: 19.617%; width: 56.004%; height: 66.806%; }
+  .outside .title, .outside .mist { transition: opacity .35s ease; }
+  body.door-open .outside .title, body.door-open .outside .mist { opacity: 0; }
+  .pax { display: block; position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 5; will-change: transform; pointer-events: none; }
+  .pax.out { z-index: 2; }
+  .pax-bob { position: absolute; left: 0; top: 0; }
+  body.flown .pax-bob { animation: bob 3.6s ease-in-out infinite; }
+  .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; transition: opacity .3s ease; user-select: none; -webkit-user-drag: none; }
+  .pose.on { opacity: 1; }
+  .pose.final {
+    filter: drop-shadow(0 0 2.6cqw color-mix(in srgb, var(--accent) 55%, transparent))
+            drop-shadow(0 0 .6cqw color-mix(in srgb, var(--accent) 70%, transparent));
+  }
+  .door-cue {
+    display: flex; flex-direction: column; align-items: center; gap: 1.2cqw;
+    position: absolute; z-index: 6; left: 26.1%; top: 39.7%; translate: -50% -50%;
+    pointer-events: none; opacity: 0; transition: opacity .8s ease;
+  }
+  .door-cue.show { opacity: 1; }
+  body.door-open .door-cue, body[data-page] .door-cue { opacity: 0; transition-duration: .25s; }
+  .door-cue i { position: relative; width: 3.4cqw; height: 3.4cqw; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.9); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .door-cue i::after { content: ""; position: absolute; inset: -1.5px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.85); animation: knock-ripple 2.6s cubic-bezier(.2,.7,.3,1) infinite; }
+  .door-cue span { font: 400 max(10px, 2.6cqw)/1 var(--display); letter-spacing: .06em; color: rgba(255,255,255,.9); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+}
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.6cqw) rotate(-.8deg); } }
+@media (prefers-reduced-motion: reduce) { body.flown .pax-bob { animation: none; } }
+
 /* ---------- About ---------- */
 /* A card ticket after Indian Railways' "Happy Journey" tickets: maroon band, punched edges, dot-matrix print.
    Everything inside scales with the ticket's own width (cqw). */
@@ -724,11 +763,19 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
         <canvas class="cracks" id="cracks" aria-hidden="true"></canvas>
         <div class="knock" id="knock" aria-hidden="true"><i></i><span>knock</span></div>
       </div>
+      <div class="doorway" id="doorway" aria-hidden="true"><img class="leaf" id="leaf" src="assets/door/leaf-mono.webp" alt="" data-door="leaf"></div>
       <picture>
-        <source media="(max-aspect-ratio: 1/1)" srcset="assets/lines/interior-mob-mono.webp">
+        <source media="(max-aspect-ratio: 1/1)" srcset="assets/door/frame-mono.webp">
         <img class="interior base" src="assets/lines/interior-desk-mono.webp" alt="A passenger in a dark train carriage looks out of the window">
       </picture>
       <img class="interior face" id="faceImg" alt="" aria-hidden="true" decoding="async">
+      <div class="pax" id="pax" aria-hidden="true"><div class="pax-bob">
+        <img class="pose on" data-door="p1" data-pose="p1" src="assets/door/p1-mono.webp" alt="">
+        <img class="pose" data-door="p3" data-pose="p3" alt="">
+        <img class="pose" data-door="p4" data-pose="p4" alt="">
+        <img class="pose final" data-door="final" data-pose="final" alt="">
+      </div></div>
+      <div class="door-cue" id="doorCue" aria-hidden="true"><i></i><span>open</span></div>
     </div>
   </div>
 </div>
@@ -971,6 +1018,8 @@ const MUSEUM = window.MUSEUM || [];
 
   let pageOpen = false;
   let broken = false;   // the window has been smashed (desktop)
+  let doorOpen = false; // phones: the carriage door is open and he is outside
+  let doorLine = 'mono', doorLoaded = false;
   /* colours the mist canvas paints with; refreshed whenever the line changes */
   let tint = '238,222,236', ink = '#094ae6', skyCol = '#f3c1ea';
   const readLineColours = () => {
@@ -1083,7 +1132,8 @@ const MUSEUM = window.MUSEUM || [];
     if (recolor.active) { setRamp(L.ramp); drawRecolor(); }
     document.body.classList.toggle('recolor', recolor.active);
     interiorImg.src = id === 'neon' ? 'assets/interior.webp' : `assets/lines/interior-desk-${id}.webp`;
-    interiorSrc.srcset = id === 'neon' ? 'assets/interior-mobile.webp' : `assets/lines/interior-mob-${id}.webp`;
+    interiorSrc.srcset = `assets/door/frame-${id}.webp`;
+    doorLine = id; document.querySelectorAll('[data-door]').forEach(el => { if (el.getAttribute('src') || doorLoaded) el.src = `assets/door/${el.dataset.door}-${id}.webp`; });
     face.want = faceSrc(id); if (face.ready || document.readyState === 'complete') loadFace();
     document.getElementById('linesName').textContent = L.name;
     const cur = document.querySelector(`.line-opt[data-line="${id}"]`);
@@ -1174,7 +1224,7 @@ const MUSEUM = window.MUSEUM || [];
 
   const render = () => {
     requestAnimationFrame(render);
-    if (pageOpen || broken) return;
+    if (pageOpen || broken || doorOpen) return;
     const W = mist.width, H = mist.height;
     mctx.globalCompositeOperation = 'source-over';
     mctx.fillStyle = skyCol; mctx.fillRect(0, 0, W, H);
@@ -1209,7 +1259,7 @@ const MUSEUM = window.MUSEUM || [];
   };
 
   const onMove = e => {
-    if (pageOpen || broken) return;
+    if (pageOpen || broken || doorOpen) return;
     const r = outside.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
     inside = x >= 0 && y >= 0 && x <= r.width && y <= r.height && y > document.querySelector('.nav ul').getBoundingClientRect().bottom - r.top;
@@ -1836,6 +1886,78 @@ const MUSEUM = window.MUSEUM || [];
       knockMark.classList.remove('gone');
       measure();
     }, reduce ? 0 : 950);
+  });
+
+  /* ======================================================================
+     Phones: tap the door. It slides into the wall, he lifts off his feet, turns, floats out through
+     the doorway and hangs there, arms open, over the passing country. Tap again and he drifts back in.
+     ====================================================================== */
+  const pax = document.getElementById('pax'), doorway = document.getElementById('doorway');
+  const doorCue = document.getElementById('doorCue');
+  const poses = {}; pax.querySelectorAll('[data-pose]').forEach(el => { poses[el.dataset.pose] = el; });
+  const R = 100 / 941;                     // artwork px → cqw
+  const POSE = {                            // each still, in artwork px around the body point at scale 1
+    p1:    { x: -88.1,  y: -314.7, w: 176.2 },
+    p3:    { x: -203.7, y: -272,   w: 307.5 },
+    p4:    { x: -193.7, y: -254.7, w: 338.5 },
+    final: { x: -346.8, y: -432.4, w: 693.5 },
+  };
+  Object.entries(POSE).forEach(([k, g]) => { const s = poses[k].style; s.left = g.x * R + 'cqw'; s.top = g.y * R + 'cqw'; s.width = g.w * R + 'cqw'; });
+  const AT = {                              // where the body point sits, and how big he is
+    seat: [88.7, 747, 1],
+    lift: [98, 724, 1],
+    sill: [440, 860, .78],
+    out:  [462, 842, .62],
+  };
+  const tf = ([x, y, k]) => `translate(${x * R}cqw, ${y * R}cqw) scale(${k})`;
+  pax.style.transform = tf(AT.seat);
+  const showPose = k => Object.entries(poses).forEach(([n, el]) => el.classList.toggle('on', n === k));
+  const move = (from, to, ms, easing) => new Promise(res => {
+    if (reduce) ms = 1;
+    const a = pax.animate([{ transform: tf(from) }, { transform: tf(to) }], { duration: ms, easing, fill: 'forwards' });
+    a.onfinish = () => { pax.style.transform = tf(to); a.cancel(); res(); };
+  });
+  const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const loadDoor = () => {
+    if (doorLoaded) return; doorLoaded = true;
+    pax.querySelectorAll('[data-door]').forEach(el => { if (!el.getAttribute('src')) el.src = `assets/door/${el.dataset.door}-${doorLine}.webp`; });
+  };
+  const portrait = () => innerWidth < innerHeight;
+  addEventListener('load', () => setTimeout(() => { if (portrait()) loadDoor(); }, 400));
+  setTimeout(() => { if (portrait()) doorCue.classList.add('show'); }, 2500);
+  let doorBusy = false;
+  const openDoor = async () => {
+    doorBusy = true; loadDoor(); doorCue.classList.remove('show');
+    doorOpen = true; document.body.classList.add('door-open'); hint.classList.add('gone');
+    await wait(350);
+    showPose('p3'); await move(AT.seat, AT.lift, 650, 'cubic-bezier(.2,.7,.3,1)');
+    showPose('p4'); await move(AT.lift, AT.sill, 950, 'cubic-bezier(.45,0,.35,1)');
+    pax.classList.add('out');
+    const last = move(AT.sill, AT.out, 750, 'cubic-bezier(.2,.7,.3,1)');
+    await wait(200); showPose('final'); await last;
+    document.body.classList.add('flown'); doorBusy = false;
+  };
+  const closeDoor = async () => {
+    doorBusy = true; document.body.classList.remove('flown');
+    showPose('p3'); await move(AT.out, AT.sill, 650, 'cubic-bezier(.45,0,.35,1)');
+    pax.classList.remove('out');
+    const back = move(AT.sill, AT.lift, 900, 'cubic-bezier(.45,0,.35,1)');
+    await wait(450); document.body.classList.remove('door-open');
+    await back;
+    showPose('p1'); await move(AT.lift, AT.seat, 450, 'cubic-bezier(.3,0,.3,1)');
+    await wait(600);
+    doorOpen = false; measure(); doorBusy = false;
+  };
+  let tapStart = null;
+  document.addEventListener('pointerdown', e => { tapStart = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive: true });
+  document.addEventListener('pointerup', e => {
+    const s = tapStart; tapStart = null;
+    if (!s || doorBusy || pageOpen || !portrait()) return;
+    if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > 12 || performance.now() - s.t > 500) return;   // a swipe wipes the glass
+    if (e.target.closest('.nav, .lines, .float-back, button, a, dialog')) return;
+    const r = doorway.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    doorOpen ? closeDoor() : openDoor();
   });
 
   window.layoutCluster = layoutCluster;
