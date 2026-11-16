@@ -449,8 +449,8 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   .pax.out { z-index: 2; }
   .pax-bob { position: absolute; left: 0; top: 0; }
   body.flown .pax-bob { animation: wander 17s ease-in-out infinite; }
-  .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; transition: opacity .3s ease; user-select: none; -webkit-user-drag: none; }
-  .pose.on { opacity: 1; }
+  .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; transition: opacity .45s ease .22s; user-select: none; -webkit-user-drag: none; }
+  .pose.on { opacity: 1; transition: opacity .5s cubic-bezier(.3,0,.2,1) 0s; }   /* the new still fades in on top before the old one lets go, so he never thins out */
   .pose.final {
     filter: drop-shadow(0 0 2.6cqw color-mix(in srgb, var(--accent) 55%, transparent))
             drop-shadow(0 0 .6cqw color-mix(in srgb, var(--accent) 70%, transparent));
@@ -582,6 +582,13 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 .plain { list-style: none; margin: 0; padding: 0; display: grid; }
 .plain li { padding: 11px 0; border-top: 1px solid var(--rule); font-size: 17px; font-weight: 400; }
 .plain li:last-child { border-bottom: 1px solid var(--rule); }
+.tools { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-content: start; }
+.tools li { position: relative; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 10px; padding: 18%; }
+.tools img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.tools span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.tools li.no-logo img { display: none; }
+.tools li.no-logo { padding: 6px; }
+.tools li.no-logo span { position: static; width: auto; height: auto; clip-path: none; font-size: 12px; overflow-wrap: anywhere; text-align: center; color: var(--text); white-space: normal; }
 .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(20px, 3vw, 40px); }
 
 .notes { display: grid; gap: 22px; }
@@ -901,13 +908,13 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
             <li>Illustration</li>
             <li>Video editing</li>
           </ul>
-          <ul class="plain" aria-label="Tools">
-            <li>After Effects</li>
-            <li>Photoshop</li>
-            <li>Illustrator</li>
-            <li>InDesign</li>
-            <li>Figma</li>
-            <li>Premiere Pro</li>
+          <ul class="tools" aria-label="Tools">
+            <li title="After Effects"><img src="assets/tools/after-effects.svg" alt="After Effects" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>After Effects</span></li>
+            <li title="Photoshop"><img src="assets/tools/photoshop.svg" alt="Photoshop" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>Photoshop</span></li>
+            <li title="Illustrator"><img src="assets/tools/illustrator.svg" alt="Illustrator" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>Illustrator</span></li>
+            <li title="InDesign"><img src="assets/tools/indesign.svg" alt="InDesign" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>InDesign</span></li>
+            <li title="Figma"><img src="assets/tools/figma.svg" alt="Figma" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>Figma</span></li>
+            <li title="Premiere Pro"><img src="assets/tools/premiere-pro.svg" alt="Premiere Pro" loading="lazy" onerror="this.parentNode.classList.add('no-logo')"><span>Premiere Pro</span></li>
           </ul>
         </div>
       </section>
@@ -1915,12 +1922,22 @@ const MUSEUM = window.MUSEUM || [];
   Object.entries(POSE).forEach(([k, g]) => { const s = poses[k].style; s.left = g.x * R + 'cqw'; s.top = g.y * R + 'cqw'; s.width = g.w * R + 'cqw'; });
   const AT = {                              // where the body point sits, and how big he is
     seat: [149.5, 954.7, 1],
-    sill: [461.5, 905, 1],     // same size all the way to the doorway
+    rise: [151, 950, 1],
+    lean: [300, 925, 1, -3],   // tipping towards the door
+    sill: [461.5, 905, 1, -1], // same size all the way to the doorway
     out:  [461.5, 880, .6],    // a little smaller once he is outside, then he drifts about
   };
-  const tf = ([x, y, k]) => `translate(${x * R}cqw, ${y * R}cqw) scale(${k})`;
+  const tf = ([x, y, k, r = 0]) => `translate(${x * R}cqw, ${y * R}cqw) rotate(${r}deg) scale(${k})`;
   pax.style.transform = tf(AT.seat);
-  const showPose = k => Object.entries(poses).forEach(([n, el]) => el.classList.toggle('on', n === k));
+  let zPose = 1;
+  const showPose = k => Object.entries(poses).forEach(([n, el]) => { if (n === k && !el.classList.contains('on')) el.style.zIndex = ++zPose; el.classList.toggle('on', n === k); });
+  // one continuous flight path through several points, so he never stops between them
+  const path = (frames, ms) => new Promise(res => {
+    if (reduce) ms = 1;
+    const a = pax.animate(frames.map(([pt, offset, easing]) => ({ transform: tf(pt), offset, easing })), { duration: ms, fill: 'forwards' });
+    a.onfinish = () => { pax.style.transform = tf(frames[frames.length - 1][0]); a.cancel(); res(); };
+  });
+  const at = (ms, fn) => setTimeout(fn, reduce ? 0 : ms);
   const move = (from, to, ms, easing) => new Promise(res => {
     if (reduce) ms = 1;
     const a = pax.animate([{ transform: tf(from) }, { transform: tf(to) }], { duration: ms, easing, fill: 'forwards' });
@@ -1938,26 +1955,40 @@ const MUSEUM = window.MUSEUM || [];
   const openDoor = async () => {
     doorBusy = true; loadDoor(); doorCue.classList.remove('show');
     doorOpen = true; document.body.classList.add('door-open'); hint.classList.add('gone');
-    await wait(300);
-    showPose('p3'); await wait(650);
-    showPose('p4'); await move(AT.seat, AT.sill, 1150, 'cubic-bezier(.45,0,.35,1)');
-    pax.classList.add('out');
-    const last = move(AT.sill, AT.out, 950, 'cubic-bezier(.2,.7,.3,1)');
-    await wait(250); showPose('final'); await last;
-    document.body.classList.add('flown'); doorBusy = false;
+    await wait(200);
+    showPose('p3');                                       // up on his toes
+    await path([[AT.seat, 0, 'ease-in-out'], [AT.rise, 1]], 650);
+    // turn, glide to the doorway and out, in one movement: he drops behind the frame as he passes it,
+    // and opens his arms while still gliding
+    const D = 2300;
+    at(60, () => showPose('p4'));
+    at(D * .52, () => pax.classList.add('out'));
+    at(D * .6, () => showPose('final'));
+    await path([
+      [AT.rise, 0, 'cubic-bezier(.4,0,.6,1)'],
+      [AT.lean, .25, 'cubic-bezier(.3,0,.5,1)'],
+      [AT.sill, .52, 'cubic-bezier(.2,0,.3,1)'],
+      [AT.out, 1],
+    ], D);
+    document.body.classList.add('flown'); doorBusy = false;   // the drift starts from rest, where the path ended
   };
   const closeDoor = async () => {
     doorBusy = true;
-    const bob = pax.firstElementChild, drift = getComputedStyle(bob).transform;   // ease out of the drift, no jump
+    const bob = pax.firstElementChild, drift = getComputedStyle(bob).transform;   // settle out of the drift, no jump
     document.body.classList.remove('flown');
-    if (drift && drift !== 'none') await new Promise(r => { const a = bob.animate([{ transform: drift }, { transform: 'none' }], { duration: reduce ? 1 : 600, easing: 'ease-in-out' }); a.onfinish = r; });
-    showPose('p3'); await move(AT.out, AT.sill, 750, 'cubic-bezier(.45,0,.35,1)');
-    pax.classList.remove('out');
-    const back = move(AT.sill, AT.seat, 1100, 'cubic-bezier(.45,0,.35,1)');
-    await wait(500); document.body.classList.remove('door-open');
-    await back;
-    showPose('p1');
-    await wait(700);
+    if (drift && drift !== 'none') await new Promise(r => { const a = bob.animate([{ transform: drift }, { transform: 'none' }], { duration: reduce ? 1 : 700, easing: 'ease-in-out' }); a.onfinish = r; });
+    const D = 2200;
+    showPose('p3');
+    at(D * .42, () => pax.classList.remove('out'));
+    at(D * .5, () => document.body.classList.remove('door-open'));
+    at(D * .84, () => showPose('p1'));
+    await path([
+      [AT.out, 0, 'cubic-bezier(.4,0,.6,1)'],
+      [AT.sill, .42, 'cubic-bezier(.3,0,.5,1)'],
+      [AT.lean, .72, 'cubic-bezier(.2,0,.3,1)'],
+      [AT.seat, 1],
+    ], D);
+    await wait(500);
     doorOpen = false; measure(); doorBusy = false;
   };
   let tapStart = null;
