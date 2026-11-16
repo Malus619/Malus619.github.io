@@ -21,3 +21,8 @@ Edit `content/work.js` the same way: one line per project, with its Behance link
 | Museum list | `content/museum.js` |
 | Window video, train images, fonts, photo | `assets/` |
 | Museum files | `assets/museum/` |
+
+## Adding wildlife photos
+
+1. Put two copies of the photo in `assets/wildlife/`: a large one (about 2000 px on the long side) and a small one (about 760 px) named with `-s` on the end.
+2. Open `content/wildlife.js` and add a line, copying the ones already there. The order in the file is the order on the wall.
