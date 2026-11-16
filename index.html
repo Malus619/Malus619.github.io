@@ -250,7 +250,13 @@ body[data-page] .lines { opacity: 0; visibility: hidden; }
   position: absolute; left: 0; top: 2.5%; width: 100%; height: auto; max-width: 100%;
   display: block; pointer-events: none; user-select: none;
 }
-/* the passenger turns to face you while the cursor rests on his face */
+/* the passenger turns to face you while the cursor rests on his face: two stacked stills, crossfaded on opacity only */
+/* the turned pose fades in on top; the base still drops out underneath only once it is covered */
+.interior.face { opacity: 0; transition: opacity .3s ease; }
+body.facing .interior.face { opacity: 1; }
+body.facing .interior.base { opacity: 0; transition: opacity 0s linear .3s; }
+@media (max-aspect-ratio: 1 / 1), (pointer: coarse) { .interior.face { display: none; } }
+body.facing .outside { cursor: default; }
 
 /* ---------- nav ---------- */
 .nav {
@@ -720,8 +726,9 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
       </div>
       <picture>
         <source media="(max-aspect-ratio: 1/1)" srcset="assets/lines/interior-mob-mono.webp">
-        <img class="interior" src="assets/lines/interior-desk-mono.webp" alt="A passenger in a dark train carriage looks out of the window">
+        <img class="interior base" src="assets/lines/interior-desk-mono.webp" alt="A passenger in a dark train carriage looks out of the window">
       </picture>
+      <img class="interior face" id="faceImg" alt="" aria-hidden="true" decoding="async">
     </div>
   </div>
 </div>
@@ -1042,6 +1049,31 @@ const MUSEUM = window.MUSEUM || [];
   const interiorImg = document.querySelector('.interior');
   const interiorSrc = document.querySelector('picture source');
   const linesList = document.getElementById('linesList'), linesToggle = document.getElementById('linesToggle');
+  /* ---- hover his face and he turns to look at you (desktop only) ---- */
+  const faceImg = document.getElementById('faceImg');
+  const face = { ready: false, on: false, rect: null, want: '' };
+  const faceSrc = id => id === 'neon' ? 'assets/face.webp' : `assets/lines/face-desk-${id}.webp`;
+  const loadFace = () => {
+    if (coarse || !face.want) return;
+    const url = face.want, pre = new Image(); pre.src = url;
+    (pre.decode ? pre.decode() : Promise.resolve()).catch(() => {}).then(() => {
+      if (url !== face.want) return;
+      faceImg.src = url; face.ready = true;
+    });
+  };
+  const faceBox = () => { face.rect = interiorImg.getBoundingClientRect(); };
+  const setFacing = on => { if (on !== face.on) { face.on = on; document.body.classList.toggle('facing', on); } };
+  addEventListener('pointermove', e => {
+    if (!face.ready || e.pointerType === 'touch') return;
+    if (pageOpen || innerWidth <= innerHeight) { setFacing(false); return; }
+    const r = face.rect || (faceBox(), face.rect);
+    const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    setFacing(fx > .70 && fx < .85 && fy > .21 && fy < .51);   // his head, in the still's own proportions
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => setFacing(false));
+  addEventListener('resize', () => { face.rect = null; });
+  addEventListener('scroll', () => { face.rect = null; }, { passive: true });
+
   const setLine = (id, save) => {
     if (!LINES[id]) id = 'neon';
     const L = LINES[id];
@@ -1052,6 +1084,7 @@ const MUSEUM = window.MUSEUM || [];
     document.body.classList.toggle('recolor', recolor.active);
     interiorImg.src = id === 'neon' ? 'assets/interior.webp' : `assets/lines/interior-desk-${id}.webp`;
     interiorSrc.srcset = id === 'neon' ? 'assets/interior-mobile.webp' : `assets/lines/interior-mob-${id}.webp`;
+    face.want = faceSrc(id); if (face.ready || document.readyState === 'complete') loadFace();
     document.getElementById('linesName').textContent = L.name;
     const cur = document.querySelector(`.line-opt[data-line="${id}"]`);
     document.getElementById('linesChip').setAttribute('style', cur.getAttribute('style'));
@@ -1066,6 +1099,7 @@ const MUSEUM = window.MUSEUM || [];
   document.addEventListener('pointerdown', e => { if (!linesList.hidden && !e.target.closest('.lines')) openLines(false); });
   let savedLine = 'mono'; try { savedLine = localStorage.getItem('line') || 'mono'; } catch (e) {}
   setLine(savedLine, false);
+  addEventListener('load', () => setTimeout(loadFace, 600));
 
   /* ---- looking through the window: the scenery shifts against the cursor ---- */
   if (!reduce) {
