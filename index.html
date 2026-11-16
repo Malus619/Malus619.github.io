@@ -272,7 +272,7 @@ body[data-page] .lines { opacity: 0; visibility: hidden; }
   color: var(--signal);
   text-decoration: none;
   font-weight: 300;
-  font-size: clamp(16px, 1.78vw, 36px);
+  font-size: clamp(13px, 1.3vw, 26px);
   letter-spacing: -0.02em;
   line-height: 1;
   padding: 0.3em 0.15em;
@@ -623,28 +623,32 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
 .piece.empty span { color: color-mix(in srgb, var(--accent) 50%, transparent); font-size: 12px; padding: 8px; }
 .piece.empty:hover, .piece.empty:focus-visible { border-color: var(--accent); }
 
-/* ---------- Museum: wildlife wall, justified rows that keep every frame's own shape ---------- */
+/* ---------- Museum: wildlife, a stack of prints ---------- */
 .wild { display: grid; gap: clamp(20px, 3vw, 32px); padding-top: clamp(36px, 5vw, 72px); border-top: 1px solid var(--rule); }
 .wild-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; }
 .wild-head h3 { margin: 0; font-family: var(--title); font-weight: 400; font-size: clamp(44px, 7vw, 104px); line-height: .85; letter-spacing: -0.01em; color: var(--accent); text-transform: lowercase; }
 .wild-head p { margin: 0; max-width: 42ch; color: var(--muted); font-size: clamp(14.5px, 1.2vw, 17px); line-height: 1.5; font-weight: 300; }
-.wall { position: relative; width: 100%; }
-.shot {
-  position: absolute; left: 0; top: 0; overflow: hidden; padding: 0; border: 0; margin: 0;
-  background: color-mix(in srgb, var(--text) 6%, transparent); cursor: zoom-in;
+.deck-wrap { display: grid; justify-items: center; gap: 26px; }
+.deck { position: relative; isolation: isolate; width: 100%; height: min(64vh, 620px); touch-action: pan-y; outline: none; }
+.deck:focus-visible { outline: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 6px; }
+.print {
+  position: absolute; left: 50%; top: 50%;
+  padding: clamp(6px, .7vw, 10px) clamp(6px, .7vw, 10px) clamp(22px, 2.4vw, 34px);
+  background: #f6f4f0; border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 34px rgba(0,0,0,.38);
+  transform: translate(-50%, -50%) translate(var(--x, 0px), var(--y, 0px)) rotate(var(--r, 0deg));
+  transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .35s ease;
+  user-select: none; -webkit-user-select: none;
 }
-.shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .9s cubic-bezier(.2,.8,.2,1), filter .4s ease; }
-.shot figcaption {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  padding: 28px 12px 10px; color: #fff; font-size: 13px; line-height: 1.3; text-align: left;
-  background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
-  opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease;
-}
-.shot figcaption span { opacity: .7; font-size: 11.5px; letter-spacing: .02em; white-space: nowrap; }
-.shot:hover img, .shot:focus-visible img { transform: scale(1.035); }
-.shot:hover figcaption, .shot:focus-visible figcaption { opacity: 1; transform: none; }
-.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.print img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; background: #ddd; }
+.print.top { cursor: grab; }
+.print.dragging { cursor: grabbing; transition: none; box-shadow: 0 2px 4px rgba(0,0,0,.4), 0 30px 60px rgba(0,0,0,.5); }
+.print.deep { opacity: 0; }
+.deck-bar { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; width: min(100%, 720px); }
+.deck-cap { flex: 1 1 220px; min-width: 0; text-align: center; display: grid; gap: 2px; }
+.deck-cap strong { font-weight: 500; font-size: 16px; color: var(--text); }
+.deck-cap span { color: var(--muted); font-size: 13px; }
+.deck-bar .btn { min-width: 44px; }
 @media (pointer: coarse) { .shot figcaption { display: none; } }
 .viewer .step { position: fixed; top: 50%; translate: 0 -50%; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 20px; }
 .viewer .step.prev { left: max(12px, env(safe-area-inset-left, 0px)); }
@@ -715,8 +719,8 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
         <div class="knock" id="knock" aria-hidden="true"><i></i><span>knock</span></div>
       </div>
       <picture>
-        <source media="(max-aspect-ratio: 1/1)" srcset="assets/interior-mobile.webp">
-        <img class="interior" src="assets/interior.webp" alt="A passenger in a dark train carriage looks out of the window">
+        <source media="(max-aspect-ratio: 1/1)" srcset="assets/lines/interior-mob-mono.webp">
+        <img class="interior" src="assets/lines/interior-desk-mono.webp" alt="A passenger in a dark train carriage looks out of the window">
       </picture>
     </div>
   </div>
@@ -782,7 +786,7 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
             <p class="name">RANGAN MUKHOPADHYAY</p>
             <p>FROM MIT INSTITUTE OF DESIGN</p>
             <p>VIA GRAPHIC &amp; USER EXPERIENCE DESIGN</p>
-            <p class="row"><span>Jrny Dt 12/11/2026</span><span class="pen"></span><span>∞ KM</span></p>
+            <p class="row"><span>Jrny Dt 29/09/05</span><span class="pen"></span><span>∞ KM</span></p>
             <p class="row"><span>Adult : 1&nbsp; Child : 0</span><span class="push">Seat : WINDOW</span></p>
             <p>Artist / Observer Only</p>
             <p class="row foot"><span>12/11/2026 23:51</span><span>MITID</span><span class="push">W1</span></p>
@@ -916,9 +920,16 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
     <section class="wild" aria-labelledby="wild-h">
       <div class="wild-head">
         <h3 id="wild-h">Wildlife</h3>
-        <p>Birds and animals, watched quietly through a long lens. Open a frame to see it large, then use the arrows to move along.</p>
+        <p>Birds and animals, watched quietly through a long lens. Flick the top print away to see the next one, or tap it to see it large.</p>
       </div>
-      <div class="wall" id="wall"></div>
+      <div class="deck-wrap">
+        <div class="deck" id="deck" tabindex="0" aria-label="Wildlife photographs, a stack of prints. Use the arrow keys to move through them, Enter to open one."></div>
+        <div class="deck-bar">
+          <button class="btn" id="deckPrev" type="button" aria-label="Previous print">&larr;</button>
+          <div class="deck-cap" aria-live="polite"><strong id="deckTitle"></strong><span id="deckMeta"></span></div>
+          <button class="btn" id="deckNext" type="button" aria-label="Next print">&rarr;</button>
+        </div>
+      </div>
     </section>
   </div>
 </section>
@@ -1053,7 +1064,7 @@ const MUSEUM = window.MUSEUM || [];
   document.querySelectorAll('.line-opt').forEach(b => b.addEventListener('click', () => { setLine(b.dataset.line, true); openLines(false); linesToggle.focus(); }));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !linesList.hidden) { openLines(false); linesToggle.focus(); } });
   document.addEventListener('pointerdown', e => { if (!linesList.hidden && !e.target.closest('.lines')) openLines(false); });
-  let savedLine = 'neon'; try { savedLine = localStorage.getItem('line') || 'neon'; } catch (e) {}
+  let savedLine = 'mono'; try { savedLine = localStorage.getItem('line') || 'mono'; } catch (e) {}
   setLine(savedLine, false);
 
   /* ---- looking through the window: the scenery shifts against the cursor ---- */
@@ -1368,10 +1379,9 @@ const MUSEUM = window.MUSEUM || [];
   };
   document.getElementById('viewerClose').addEventListener('click', () => viewer.close());
 
-  /* ---- Museum: wildlife wall (justified rows) ---- */
+  /* ---- Museum: wildlife prints and their viewer ---- */
   const WILD = window.WILDLIFE || [];
-  const wall = document.getElementById('wall');
-  const viewerPrev = document.getElementById('viewerPrev'), viewerNext = document.getElementById('viewerNext');
+    const viewerPrev = document.getElementById('viewerPrev'), viewerNext = document.getElementById('viewerNext');
   let stepping = null;
   const showShot = (i) => {
     const n = WILD.length; i = (i + n) % n;
@@ -1398,41 +1408,100 @@ const MUSEUM = window.MUSEUM || [];
     const dx = e.clientX - swipeX; swipeX = null;
     if (Math.abs(dx) > 50) showShot(stepping + (dx < 0 ? 1 : -1));
   });
-  const shots = WILD.map((m, i) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'shot'; b.setAttribute('aria-label', `Open ${m.title}`);
-    const img = new Image(); img.src = m.thumb || m.src; img.alt = m.title; img.loading = 'lazy'; img.decoding = 'async';
-    const cap = document.createElement('figcaption');
-    cap.innerHTML = '<strong></strong><span></span>';
-    cap.firstChild.textContent = m.title; cap.lastChild.textContent = m.frame || '';
-    b.append(img, cap); b.addEventListener('click', () => showShot(i));
-    wall.appendChild(b);
-    return b;
+  /* the wall is a stack of prints: flick the top one away and it slides to the bottom */
+  const deck = document.getElementById('deck');
+  const jit = (n, s) => { const x = Math.sin(n * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+  const prints = WILD.map((m, i) => {
+    const el = document.createElement('div'); el.className = 'print';
+    const img = new Image(); img.src = m.thumb || m.src; img.alt = m.title; img.decoding = 'async';
+    el.appendChild(img); deck.appendChild(el);
+    return { el, m, i, r: (jit(i, 1) - .5) * 14, x: (jit(i, 2) - .5) * 44, y: (jit(i, 3) - .5) * 30 };
   });
+  let order = prints.map((_, i) => i);
+  const VISIBLE = 6;
   function layoutWall() {
-    const W = wall.clientWidth; if (!W || !shots.length) return;
-    const gap = W < 600 ? 6 : 10, target = W < 600 ? 150 : W < 1000 ? 210 : 270;
-    let y = 0, row = [];
-    const flush = (last) => {
-      const ratios = row.map(i => WILD[i].w / WILD[i].h), sum = ratios.reduce((a, r) => a + r, 0);
-      let hRow = (W - gap * (row.length - 1)) / sum;
-      if (last && hRow > target * 1.25) hRow = target;
-      let x = 0;
-      row.forEach((i, k) => {
-        const w = ratios[k] * hRow, s = shots[i].style;
-        s.width = w + 'px'; s.height = hRow + 'px'; s.transform = `translate(${x}px, ${y}px)`;
-        x += w + gap;
-      });
-      y += hRow + gap; row = [];
-    };
-    WILD.forEach((m, i) => {
-      row.push(i);
-      const sum = row.reduce((a, k) => a + WILD[k].w / WILD[k].h, 0);
-      if ((W - gap * (row.length - 1)) / sum <= target) flush(false);
+    const W = deck.clientWidth, H = deck.clientHeight; if (!W || !prints.length) return;
+    const bw = Math.min(W * .84, 780), bh = H * .88 - 48;
+    prints.forEach(p => {
+      const a = p.m.w / p.m.h; let w = bw, hh = w / a;
+      if (hh > bh) { hh = bh; w = hh * a; }
+      p.el.style.width = w + 'px'; p.el.style.height = (hh + (W < 600 ? 22 : 30)) + 'px';
+      p.el.querySelector('img').style.height = hh - (W < 600 ? 12 : 18) + 'px';
     });
-    if (row.length) flush(true);
-    wall.style.height = Math.max(0, y - gap) + 'px';
+    stackUp();
   }
+  function stackUp() {
+    const n = order.length;
+    order.forEach((idx, d) => {
+      const p = prints[idx], s = p.el.style;
+      s.zIndex = n - d;
+      const k = d === 0 ? .35 : 1;   // the top print sits almost straight
+      s.setProperty('--x', p.x * k + 'px'); s.setProperty('--y', p.y * k + 'px'); s.setProperty('--r', p.r * k + 'deg');
+      p.el.classList.toggle('top', d === 0); p.el.classList.toggle('deep', d >= VISIBLE);
+    });
+    const top = prints[order[0]].m;
+    document.getElementById('deckTitle').textContent = top.title;
+    document.getElementById('deckMeta').textContent = `${top.frame ? top.frame + ', ' : ''}${order[0] + 1} of ${n}`;
+    const nx = prints[order[1 % n]].m; const pre = new Image(); pre.src = nx.thumb || nx.src;
+  }
+  let busy = false;
+  const flick = (dir, fromX = 0, fromY = 0) => {   // top print flies off, then tucks in at the bottom
+    if (busy || order.length < 2) return; busy = true;
+    const p = prints[order[0]], s = p.el.style;
+    const off = (deck.clientWidth * .5 + p.el.offsetWidth) * dir;
+    s.transition = 'transform .38s cubic-bezier(.4,0,.8,.4), opacity .38s ease';
+    s.setProperty('--x', off + 'px'); s.setProperty('--y', (fromY * 1.5 - 40) + 'px'); s.setProperty('--r', (dir * 24) + 'deg');
+    p.el.style.opacity = '0';
+    order.push(order.shift());
+    setTimeout(() => { s.transition = ''; p.el.style.opacity = ''; p.el.classList.remove('dragging'); stackUp(); busy = false; }, reduce ? 0 : 380);
+  };
+  const back = () => {   // the bottom print comes back on top
+    if (busy || order.length < 2) return; busy = true;
+    order.unshift(order.pop());
+    const p = prints[order[0]], s = p.el.style;
+    s.transition = 'none'; p.el.classList.remove('deep');
+    s.zIndex = order.length + 1;
+    s.setProperty('--x', (-deck.clientWidth * .6) + 'px'); s.setProperty('--r', '-20deg'); s.opacity = '0';
+    p.el.offsetWidth;
+    s.transition = ''; s.opacity = '';
+    stackUp(); setTimeout(() => { busy = false; }, 300);
+  };
+  document.getElementById('deckNext').addEventListener('click', () => flick(1));
+  document.getElementById('deckPrev').addEventListener('click', back);
+  deck.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); flick(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); back(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showShot(order[0]); }
+  });
+  let grabbed = null;
+  deck.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.print'); if (!el || !el.classList.contains('top') || busy) return;
+    grabbed = { el, x0: e.clientX, y0: e.clientY, moved: false, t: performance.now(), id: e.pointerId };
+    if (e.pointerType !== 'touch') el.setPointerCapture(e.pointerId);
+  });
+  deck.addEventListener('pointermove', e => {
+    if (!grabbed) return;
+    const dx = e.clientX - grabbed.x0, dy = e.clientY - grabbed.y0;
+    if (!grabbed.moved && Math.hypot(dx, dy) > 6) {
+      if (e.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx)) { grabbed = null; return; }   // let the page scroll
+      grabbed.moved = true; grabbed.el.classList.add('dragging');
+      try { grabbed.el.setPointerCapture(grabbed.id); } catch (err) {}
+    }
+    if (grabbed.moved) {
+      const s = grabbed.el.style;
+      s.setProperty('--x', dx + 'px'); s.setProperty('--y', dy + 'px'); s.setProperty('--r', (dx / 18) + 'deg');
+    }
+  });
+  const letGo = e => {
+    if (!grabbed) return;
+    const g = grabbed; grabbed = null;
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0, v = Math.abs(dx) / Math.max(1, performance.now() - g.t);
+    if (!g.moved) { showShot(order[0]); return; }
+    if (Math.abs(dx) > 110 || v > .6) flick(dx > 0 ? 1 : -1, dx, dy);
+    else { g.el.classList.remove('dragging'); stackUp(); }
+  };
+  deck.addEventListener('pointerup', letGo);
+  deck.addEventListener('pointercancel', () => { if (grabbed) { grabbed.el.classList.remove('dragging'); grabbed = null; stackUp(); } });
   layoutWall();
   addEventListener('resize', layoutWall);
   viewer.addEventListener('close', () => { const v = viewer.querySelector('video'); if (v) v.pause(); });
