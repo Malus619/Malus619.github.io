@@ -449,8 +449,8 @@ body[data-page] .float-back { opacity: 1; visibility: visible; transform: none; 
   .pax.out { z-index: 2; }
   .pax-bob { position: absolute; left: 0; top: 0; }
   body.flown .pax-bob { animation: wander 17s ease-in-out infinite; }
-  .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; transition: opacity .45s ease .22s; user-select: none; -webkit-user-drag: none; }
-  .pose.on { opacity: 1; transition: opacity .5s cubic-bezier(.3,0,.2,1) 0s; }   /* the new still fades in on top before the old one lets go, so he never thins out */
+  .pose { position: absolute; display: block; height: auto; max-width: none; opacity: 0; user-select: none; -webkit-user-drag: none; }
+  .pose.on { opacity: 1; }   /* a flipbook: each still snaps to the next while the figure itself glides */
   .pose.final {
     filter: drop-shadow(0 0 2.6cqw color-mix(in srgb, var(--accent) 55%, transparent))
             drop-shadow(0 0 .6cqw color-mix(in srgb, var(--accent) 70%, transparent));
@@ -787,9 +787,17 @@ dialog.viewer::backdrop { background: rgba(3, 8, 10, .88); }
       </picture>
       <img class="interior face" id="faceImg" alt="" aria-hidden="true" decoding="async">
       <div class="pax" id="pax" aria-hidden="true"><div class="pax-bob">
-        <img class="pose on" data-door="p1" data-pose="p1" src="assets/door/p1-mono.webp" alt="">
-        <img class="pose" data-door="p3" data-pose="p3" alt="">
-        <img class="pose" data-door="p4" data-pose="p4" alt="">
+        <img class="pose on" data-door="f1" data-pose="f1" src="assets/door/f1-mono.webp" alt="">
+        <img class="pose" data-door="f2" data-pose="f2" alt="">
+        <img class="pose" data-door="f3" data-pose="f3" alt="">
+        <img class="pose" data-door="f4" data-pose="f4" alt="">
+        <img class="pose" data-door="f5" data-pose="f5" alt="">
+        <img class="pose" data-door="f6" data-pose="f6" alt="">
+        <img class="pose" data-door="f7" data-pose="f7" alt="">
+        <img class="pose" data-door="f8" data-pose="f8" alt="">
+        <img class="pose" data-door="f9" data-pose="f9" alt="">
+        <img class="pose" data-door="f10" data-pose="f10" alt="">
+        <img class="pose" data-door="f11" data-pose="f11" alt="">
         <img class="pose final" data-door="final" data-pose="final" alt="">
       </div></div>
       <div class="door-cue" id="doorCue" aria-hidden="true"><i></i><span>open</span></div>
@@ -1914,17 +1922,20 @@ const MUSEUM = window.MUSEUM || [];
   const poses = {}; pax.querySelectorAll('[data-pose]').forEach(el => { poses[el.dataset.pose] = el; });
   const R = 100 / 941;                     // artwork px → cqw
   const POSE = {                            // each still, in artwork px around the body point at scale 1
-    p1:    { x: -157.5, y: -562.5, w: 315 },     // standing against the wall, as on the old phone image
-    p3:    { x: -367.3, y: -475.5, w: 549.7 },   // up on his toes, shoes still on the floor
-    p4:    { x: -350,   y: -445,   w: 605 },
-    final: { x: -437,   y: -545,   w: 874 },
+    // 1 standing against the wall, 2–5 up on his toes (shoes on the floor), 6–7 lifting off, 8 his back,
+    // 9–11 tipping back out into the air; each one lined up on the one before it
+    f1: { x: -157.5, y: -562.5, w: 315 },   f2: { x: -193.8, y: -465.7, w: 369.9 }, f3: { x: -191.5, y: -446.3, w: 357.1 },
+    f4: { x: -243.5, y: -411.7, w: 419.8 }, f5: { x: -235.2, y: -424, w: 432.2 },    f6: { x: -253.7, y: -382.3, w: 494.7 },
+    f7: { x: -262.9, y: -337.8, w: 532.3 }, f8: { x: -252.9, y: -287.3, w: 556.7 },  f9: { x: -242.8, y: -300.9, w: 588.3 },
+    f10: { x: -249.5, y: -263.7, w: 656.7 }, f11: { x: -252.2, y: -184, w: 591.8 },
+    final: { x: -437, y: -545, w: 874 },
   };
   Object.entries(POSE).forEach(([k, g]) => { const s = poses[k].style; s.left = g.x * R + 'cqw'; s.top = g.y * R + 'cqw'; s.width = g.w * R + 'cqw'; });
   const AT = {                              // where the body point sits, and how big he is
     seat: [149.5, 954.7, 1],
     rise: [151, 950, 1],
-    lean: [300, 925, 1, -3],   // tipping towards the door
-    sill: [461.5, 905, 1, -1], // same size all the way to the doorway
+    lean: [300, 900, 1, -2],   // off the floor, heading for the door
+    sill: [461.5, 880, 1, 0],  // same size all the way to the doorway
     out:  [461.5, 880, .6],    // a little smaller once he is outside, then he drifts about
   };
   const tf = ([x, y, k, r = 0]) => `translate(${x * R}cqw, ${y * R}cqw) rotate(${r}deg) scale(${k})`;
@@ -1952,22 +1963,20 @@ const MUSEUM = window.MUSEUM || [];
   addEventListener('load', () => setTimeout(() => { if (portrait()) loadDoor(); }, 400));
   setTimeout(() => { if (portrait()) doorCue.classList.add('show'); }, 2500);
   let doorBusy = false;
+  // a flipbook: [ms, still] pairs, played against the clock while the figure glides along its path
+  const flip = (steps) => steps.forEach(([ms, k]) => at(ms, () => showPose(k)));
   const openDoor = async () => {
     doorBusy = true; loadDoor(); doorCue.classList.remove('show');
     doorOpen = true; document.body.classList.add('door-open'); hint.classList.add('gone');
-    await wait(200);
-    showPose('p3');                                       // up on his toes
-    await path([[AT.seat, 0, 'ease-in-out'], [AT.rise, 1]], 650);
-    // turn, glide to the doorway and out, in one movement: he drops behind the frame as he passes it,
-    // and opens his arms while still gliding
-    const D = 2300;
-    at(60, () => showPose('p4'));
-    at(D * .52, () => pax.classList.add('out'));
-    at(D * .6, () => showPose('final'));
+    flip([[280, 'f2'], [400, 'f3'], [520, 'f4'], [640, 'f5']]);          // up on his toes, by the wall
+    await wait(760);
+    const D = 1500;                                                       // lift off, out through the door, away
+    flip([[0, 'f6'], [240, 'f7'], [500, 'f8'], [800, 'f9'], [1000, 'f10'], [1200, 'f11'], [D - 40, 'final']]);
+    at(D * .5, () => pax.classList.add('out'));
     await path([
-      [AT.rise, 0, 'cubic-bezier(.4,0,.6,1)'],
-      [AT.lean, .25, 'cubic-bezier(.3,0,.5,1)'],
-      [AT.sill, .52, 'cubic-bezier(.2,0,.3,1)'],
+      [AT.seat, 0, 'cubic-bezier(.4,0,.6,1)'],
+      [AT.lean, .3, 'cubic-bezier(.3,0,.5,1)'],
+      [AT.sill, .5, 'cubic-bezier(.2,0,.3,1)'],
       [AT.out, 1],
     ], D);
     document.body.classList.add('flown'); doorBusy = false;   // the drift starts from rest, where the path ended
@@ -1976,16 +1985,15 @@ const MUSEUM = window.MUSEUM || [];
     doorBusy = true;
     const bob = pax.firstElementChild, drift = getComputedStyle(bob).transform;   // settle out of the drift, no jump
     document.body.classList.remove('flown');
-    if (drift && drift !== 'none') await new Promise(r => { const a = bob.animate([{ transform: drift }, { transform: 'none' }], { duration: reduce ? 1 : 700, easing: 'ease-in-out' }); a.onfinish = r; });
-    const D = 2200;
-    showPose('p3');
-    at(D * .42, () => pax.classList.remove('out'));
+    if (drift && drift !== 'none') await new Promise(r => { const a = bob.animate([{ transform: drift }, { transform: 'none' }], { duration: reduce ? 1 : 600, easing: 'ease-in-out' }); a.onfinish = r; });
+    const D = 1500;                                                       // a quicker glide back, fewer stills
+    flip([[0, 'f11'], [260, 'f8'], [700, 'f6'], [980, 'f4'], [1220, 'f2'], [1440, 'f1']]);
+    at(D * .45, () => pax.classList.remove('out'));
     at(D * .5, () => document.body.classList.remove('door-open'));
-    at(D * .84, () => showPose('p1'));
     await path([
       [AT.out, 0, 'cubic-bezier(.4,0,.6,1)'],
-      [AT.sill, .42, 'cubic-bezier(.3,0,.5,1)'],
-      [AT.lean, .72, 'cubic-bezier(.2,0,.3,1)'],
+      [AT.sill, .45, 'cubic-bezier(.3,0,.5,1)'],
+      [AT.lean, .75, 'cubic-bezier(.2,0,.3,1)'],
       [AT.seat, 1],
     ], D);
     await wait(500);
